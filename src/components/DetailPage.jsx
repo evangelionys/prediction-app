@@ -7,8 +7,8 @@ import CommentCard from './CommentCard';
 
 const DETAIL_TABS = ["Question", "Reasoning", "Opportunities", "Discussions"];
 
-const DetailPage = ({ data, onBack, setSubView, drivers, opportunities, onPredict }) => {
-  const [activeTab, setActiveTab] = useState("Question");
+const DetailPage = ({ data, onBack, setSubView, drivers, opportunities, onPredict, initialTab = "Question" }) => {
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [userPrediction, setUserPrediction] = useState(null);
   
   const totalPercentage = data.stats.yes + data.stats.no;

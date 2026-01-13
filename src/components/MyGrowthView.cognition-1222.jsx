@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Edit3, Share2, Bell, ArrowRight, Sparkles, Clock, Lightbulb, Target, Bot, MessageSquare, BrainCircuit, Zap, X, CheckCircle2 } from 'lucide-react';
+import { Edit3, Share2, Bell, ArrowRight, Sparkles, Clock, Lightbulb, Target, Bot, MessageSquare, BrainCircuit, Zap, X, CheckCircle2, Plus } from 'lucide-react';
 import { USER_PROFILE, USER_METRICS, USER_STATS, COGNITION_TREND_DATA, COGNITIVE_DIMENSIONS, HISTORICAL_RECORDS } from '../App';
+import EditProfileModal from './EditProfileModal';
 
 // 认知雷达图组件
 const CognitiveRadarChart = ({ onPointClick }) => {
@@ -43,9 +44,9 @@ const CognitiveRadarChart = ({ onPointClick }) => {
       color: '#ef4444'
     },
     { 
-      name: 'Analysis',
-      score: COGNITIVE_DIMENSIONS.analysis.score,
-      explanation: COGNITIVE_DIMENSIONS.analysis.explanation,
+      name: 'Judgment',
+      score: COGNITIVE_DIMENSIONS.judgment.score,
+      explanation: COGNITIVE_DIMENSIONS.judgment.explanation,
       color: '#6366f1'
     }
   ];
@@ -116,7 +117,7 @@ const CognitiveRadarChart = ({ onPointClick }) => {
       <div className="relative z-10">
         <div className="flex items-center gap-2 mb-4">
           <BrainCircuit size={18} className="text-cyan-600" />
-          <h3 className="text-sm font-bold text-slate-900">Cognitive Radar</h3>
+          <h3 className="text-sm font-bold text-slate-900">Cognitive Profile</h3>
           <div className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded ${
             levelInfo.level === 'normal' ? 'bg-slate-100 text-slate-600' :
             levelInfo.level === 'advanced' ? 'bg-cyan-100 text-cyan-600' :
@@ -349,7 +350,7 @@ const TrendChart = ({ data, type, showAI = false }) => {
   return (
     <div className="w-full">
       <svg viewBox={`0 0 ${w + yAxisLeftPadding} ${h}`} className="w-full h-full overflow-visible">
-        {/* Y轴网格线 */}
+        {/* Y轴网格线和标签 */}
         {[0, 25, 50, 75, 100].map((label) => {
           if (type !== 'accuracy' && label === 0) return null;
           const y = type === 'accuracy' 
@@ -367,9 +368,32 @@ const TrendChart = ({ data, type, showAI = false }) => {
                 strokeDasharray="2 2"
                 opacity={0.5}
               />
+              {/* Y轴标签 - 仅对accuracy类型显示百分比 */}
+              {type === 'accuracy' && (
+                <text
+                  x={chartStartX - 8}
+                  y={y + 3}
+                  fontSize="8"
+                  fill="#64748b"
+                  textAnchor="end"
+                  fontWeight="500"
+                >
+                  {label}%
+                </text>
+              )}
             </g>
           );
         })}
+        
+        {/* Y轴线 */}
+        <line 
+          x1={chartStartX} 
+          y1={chartStartY} 
+          x2={chartStartX} 
+          y2={chartStartY + chartHeight} 
+          stroke="#e2e8f0" 
+          strokeWidth="1" 
+        />
         
         {/* X轴 */}
         <line 
@@ -523,6 +547,9 @@ const DetailOverlay = ({ dimension, onClose }) => {
 const MyGrowthView = ({ onNavigate }) => {
   const [selectedDimension, setSelectedDimension] = useState(null);
   const [activeActivityTab, setActiveActivityTab] = useState('prediction');
+  const [activePredictionFilter, setActivePredictionFilter] = useState('predicted');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [localUserProfile, setLocalUserProfile] = useState(USER_PROFILE);
   
   const ProfileHeader = () => (
     <div className="bg-white/90 backdrop-blur-md p-4 pb-4 border-b border-cyan-100/50 relative">
@@ -533,47 +560,56 @@ const MyGrowthView = ({ onNavigate }) => {
       <div className="relative z-10">
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500 via-blue-600 to-purple-600 text-white flex items-center justify-center text-2xl font-bold border-4 border-white shadow-xl glow-effect">
-              {USER_PROFILE.avatar}
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500 via-blue-600 to-purple-600 text-white flex items-center justify-center text-2xl font-bold border-4 border-white shadow-xl glow-effect overflow-hidden">
+              {typeof localUserProfile.avatar === 'string' && localUserProfile.avatar.length <= 2 ? (
+                localUserProfile.avatar
+              ) : (
+                <img src={localUserProfile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+              )}
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900 mb-1">{USER_PROFILE.name}</h1>
-              <div className="text-slate-500 text-sm mb-2 font-mono">{USER_PROFILE.handle}</div>
+              <h1 className="text-xl font-bold text-slate-900 mb-1">{localUserProfile.name}</h1>
               <div className="flex gap-4 text-sm">
                 <button onClick={() => onNavigate('list_followers')} className="hover:text-cyan-600 transition-colors group">
-                  <span className="font-bold text-slate-900 group-hover:text-cyan-600">{USER_PROFILE.followers}</span> <span className="text-slate-500">Followers</span>
+                  <span className="font-bold text-slate-900 group-hover:text-cyan-600">{localUserProfile.followers}</span> <span className="text-slate-500">Followers</span>
                 </button>
                 <button onClick={() => onNavigate('list_following')} className="hover:text-cyan-600 transition-colors group">
-                  <span className="font-bold text-slate-900 group-hover:text-cyan-600">{USER_PROFILE.following}</span> <span className="text-slate-500">Following</span>
+                  <span className="font-bold text-slate-900 group-hover:text-cyan-600">{localUserProfile.following}</span> <span className="text-slate-500">Following</span>
                 </button>
               </div>
             </div>
           </div>
-          <button className="p-2 border border-cyan-200 rounded-full hover:bg-cyan-50 hover:border-cyan-300 text-slate-600 transition-all hover-glow">
+          <button 
+            onClick={() => setIsEditModalOpen(true)}
+            className="p-2 border border-cyan-200 rounded-full hover:bg-cyan-50 hover:border-cyan-300 text-slate-600 transition-all hover-glow"
+          >
             <Edit3 size={18} />
           </button>
         </div>
         
-        <p className="text-slate-600 text-sm mb-4 leading-relaxed">{USER_PROFILE.bio}</p>
+        <p className="text-slate-600 text-sm mb-4 leading-relaxed">{localUserProfile.bio}</p>
         
-        <div className="flex gap-2 mt-4 pb-4 flex-wrap">
-          {USER_PROFILE.badges
-            .filter(badge => badge.label !== 'U.S. Politics Expert')
-            .slice(0, 3)
-            .map((badge, idx) => (
-            <button
-              key={idx}
-              onClick={() => onNavigate(`badge_detail_${badge.label.toLowerCase().replace(/\s+/g, '_')}`)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border ${badge.color.replace('text-', 'bg-').replace('border-', 'bg-opacity-10 ')} bg-opacity-5 hover:bg-opacity-15 hover:shadow-md hover:scale-105 transition-all cursor-pointer group relative overflow-hidden min-w-0`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/10 to-cyan-500/0 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <span className="text-base filter drop-shadow-sm shrink-0 relative z-10">{badge.icon}</span>
-              <div className="flex flex-col items-start min-w-0 relative z-10">
-                <span className="text-[10px] font-bold text-slate-900 leading-tight whitespace-normal break-words">{badge.label}</span>
-              </div>
-            </button>
-          ))}
-        </div>
+        {/* 徽章功能已隐藏，等待后续通知显示 */}
+        {false && (
+          <div className="flex gap-2 mt-4 pb-2 flex-wrap">
+            {USER_PROFILE.badges
+              .filter(badge => badge.label !== 'U.S. Politics Expert')
+              .slice(0, 3)
+              .map((badge, idx) => (
+              <button
+                key={idx}
+                onClick={() => onNavigate(`badge_detail_${badge.label.toLowerCase().replace(/\s+/g, '_')}`)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border ${badge.color.replace('text-', 'bg-').replace('border-', 'bg-opacity-10 ')} bg-opacity-5 hover:bg-opacity-15 hover:shadow-md hover:scale-105 transition-all cursor-pointer group relative overflow-hidden min-w-0`}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/10 to-cyan-500/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <span className="text-base filter drop-shadow-sm shrink-0 relative z-10">{badge.icon}</span>
+                <div className="flex flex-col items-start min-w-0 relative z-10">
+                  <span className="text-[10px] font-bold text-slate-900 leading-tight whitespace-normal break-words">{badge.label}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -655,7 +691,7 @@ const MyGrowthView = ({ onNavigate }) => {
           </div>
         </div>
         <ProfileHeader />
-        <div className="p-4">
+        <div className="px-4 pt-2 pb-4">
           <CognitiveRadarChart onPointClick={(index, dimension) => setSelectedDimension({ index, ...dimension })} />
         </div>
         <InsightCard />
@@ -665,7 +701,12 @@ const MyGrowthView = ({ onNavigate }) => {
               <Zap size={14} className="text-cyan-600" />
               <h3 className="font-bold text-slate-900 text-sm">Activities</h3>
             </div>
-            <span className="text-xs text-cyan-600 hover:text-cyan-700 cursor-pointer font-mono">View All</span>
+            <span 
+              className="text-xs text-cyan-600 hover:text-cyan-700 cursor-pointer font-mono"
+              onClick={() => onNavigate(`activities_all_${activeActivityTab}`)}
+            >
+              View All
+            </span>
           </div>
           
           {/* Activities Tab 切换菜单 */}
@@ -706,12 +747,93 @@ const MyGrowthView = ({ onNavigate }) => {
           <div>
             {/* Prediction Activities */}
             {activeActivityTab === 'prediction' && (
-              <div className="space-y-2">
-                {HISTORICAL_RECORDS.predictions.slice(0, 3).map((record) => (
-                  <div key={record.id} className="bg-white/80 backdrop-blur-sm border border-cyan-200/50 p-3 rounded-lg hover:border-cyan-300 hover:shadow-md transition-all group">
+              <>
+                {/* Prediction 子 Tab 筛选栏 - 弱化样式 */}
+                <div className="flex gap-1 mb-2.5">
+                  <button
+                    onClick={() => setActivePredictionFilter('predicted')}
+                    className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${
+                      activePredictionFilter === 'predicted'
+                        ? 'text-cyan-600 bg-cyan-50'
+                        : 'text-slate-400 hover:text-slate-600'
+                    }`}
+                  >
+                    Predicted
+                  </button>
+                  <button
+                    onClick={() => setActivePredictionFilter('saved')}
+                    className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${
+                      activePredictionFilter === 'saved'
+                        ? 'text-cyan-600 bg-cyan-50'
+                        : 'text-slate-400 hover:text-slate-600'
+                    }`}
+                  >
+                    Saved
+                  </button>
+                  <button
+                    onClick={() => setActivePredictionFilter('created')}
+                    className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${
+                      activePredictionFilter === 'created'
+                        ? 'text-cyan-600 bg-cyan-50'
+                        : 'text-slate-400 hover:text-slate-600'
+                    }`}
+                  >
+                    Created
+                  </button>
+                </div>
+                
+                <div className="space-y-2">
+                  {(() => {
+                    // 根据筛选条件过滤数据
+                    let filteredRecords = HISTORICAL_RECORDS.predictions;
+                    if (activePredictionFilter === 'predicted') {
+                      // Predicted：参与预测的题目
+                      filteredRecords = filteredRecords.filter(r => r.isPredicted);
+                    } else if (activePredictionFilter === 'saved') {
+                      // Saved：已保存的题目（isFollowed）
+                      filteredRecords = filteredRecords.filter(r => r.isFollowed);
+                    } else if (activePredictionFilter === 'created') {
+                      // Created：创建的题目
+                      filteredRecords = filteredRecords.filter(r => r.isCreated);
+                    }
+                    return filteredRecords.slice(0, 3).map((record) => (
+                  <div 
+                    key={record.id} 
+                    className={`bg-white/80 backdrop-blur-sm border p-3 rounded-lg hover:shadow-md transition-all group relative ${
+                      record.isCreated 
+                        ? 'border-purple-200/50 hover:border-purple-300' 
+                        : record.isPredicted && !record.isFollowed
+                        ? 'border-cyan-200/50 hover:border-cyan-300'
+                        : record.isFollowed && !record.isPredicted
+                        ? 'border-blue-200/50 hover:border-blue-300'
+                        : 'border-cyan-200/50 hover:border-cyan-300'
+                    }`}
+                  >
+                    {/* Created 图标 - 放在卡片左上角 */}
+                    {record.isCreated && (
+                      <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-purple-100 border border-purple-200 flex items-center justify-center z-10">
+                        <Plus size={12} className="text-purple-600" />
+                      </div>
+                    )}
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center border border-cyan-200 group-hover:bg-cyan-200 transition-colors shrink-0">
-                        <Target size={18} className="text-cyan-600" />
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center border shrink-0 transition-colors ${
+                        record.isCreated 
+                          ? 'bg-purple-100 border-purple-200 group-hover:bg-purple-200' 
+                          : record.isPredicted && !record.isFollowed
+                          ? 'bg-cyan-100 border-cyan-200 group-hover:bg-cyan-200'
+                          : record.isFollowed && !record.isPredicted
+                          ? 'bg-blue-100 border-blue-200 group-hover:bg-blue-200'
+                          : 'bg-cyan-100 border-cyan-200 group-hover:bg-cyan-200'
+                      }`}>
+                        <Target size={18} className={
+                          record.isCreated 
+                            ? 'text-purple-600' 
+                            : record.isPredicted && !record.isFollowed
+                            ? 'text-cyan-600'
+                            : record.isFollowed && !record.isPredicted
+                            ? 'text-blue-600'
+                            : 'text-cyan-600'
+                        } />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-bold text-slate-900 mb-1">{record.title}</div>
@@ -752,8 +874,10 @@ const MyGrowthView = ({ onNavigate }) => {
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
+                    ));
+                  })()}
+                </div>
+              </>
             )}
             
             {/* Contribution Activities */}
@@ -821,6 +945,17 @@ const MyGrowthView = ({ onNavigate }) => {
           onClose={() => setSelectedDimension(null)} 
         />
       )}
+      
+      <EditProfileModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        userProfile={localUserProfile}
+        onSave={(updatedProfile) => {
+          setLocalUserProfile(updatedProfile);
+          // 这里可以添加保存到后端的逻辑
+          console.log('Profile updated:', updatedProfile);
+        }}
+      />
     </>
   );
 };

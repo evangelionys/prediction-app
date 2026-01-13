@@ -1,4 +1,4 @@
-# Predix - 预测平台
+# Probable - 预测平台
 
 这是一个基于React的预测平台应用，使用Vite作为构建工具，Tailwind CSS进行样式设计。
 

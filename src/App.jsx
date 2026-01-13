@@ -104,7 +104,9 @@ import {
 
   List,
 
-  Plus
+  Plus,
+
+  Heart
 
 } from 'lucide-react';
 
@@ -122,6 +124,12 @@ import MyGrowthViewCognition from './components/MyGrowthView.cognition-1222';
 import FeedView from './components/FeedView';
 import PredictionCard from './components/PredictionCard';
 import GenericListView from './components/GenericListView';
+import TrendView from './components/TrendView';
+import UserProfileView from './components/UserProfileView';
+import FollowedView from './components/FollowedView';
+import SearchView from './components/SearchView';
+import ActivitiesListView from './components/ActivitiesListView';
+import FollowersFollowingListView from './components/FollowersFollowingListView';
 
 // Version configuration - 可以切换 'basic-1222' 或 'cognition-1222'
 const ME_VIEW_VERSION = 'cognition-1222'; // 切换到 'basic-1222' 使用基础版本
@@ -586,7 +594,7 @@ const MOCK_CARDS = [
 
 const USER_PROFILE = {
 
-  name: "Alex Trader",
+  name: "Alex Thinker",
 
   handle: "@alxt_macro",
 
@@ -630,27 +638,27 @@ const USER_METRICS = {
 const COGNITIVE_DIMENSIONS = {
   breadth: {
     score: 1.5, // 0-10 scale, based on predictions.total percentile
-    explanation: "Measures the scope of user's cognitive engagement through the total number of predictions participated in."
+    explanation: "Measures the scope of the user's cognitive engagement through the total number of Predictions they participated in."
   },
   versatility: {
     score: 3.2, // Based on number of distinct tags/categories
-    explanation: "Measures the variety of cognitive domains explored through the number of distinct tags covered in user's predictions."
+    explanation: "Measures the diversity of topics the user explored through the number of distinct tags covered across their Predictions."
   },
   accuracy: {
     score: 8.5, // Based on accuracy percentile
-    explanation: "Measures the precision of user's judgment through the percentage of correct predictions made."
+    explanation: "Measures the user's judgment precision through the percentage of their Predictions that turned out to be correct."
   },
   conviction: {
     score: 6.8, // Based on average predicted probability on correct predictions
-    explanation: "Measures user's boldness and risk-taking tendency through the average predicted probability on predictions that turned out to be correct."
+    explanation: "Measures the user's conviction (boldness) through the average predicted probability on the Predictions that turned out to be correct."
   },
   influence: {
     score: 9.9, // Based on followers, votes on contributions
-    explanation: "Measures the impact of user's contributions through followers count, votes received on contributed drivers and opportunities."
+    explanation: "Measures the user's influence through a weighted count of high-quality Predictions, Drivers, and Opportunities they created."
   },
-  analysis: {
+  judgment: {
     score: 4.5, // Based on votes cast + contributions
-    explanation: "Measures user's analytical thinking through votes cast and contributions of drivers and opportunities."
+    explanation: "Measures the user's judgment through the number of Predictions in which they performed judgment actions (e.g., voting on Drivers, Opportunities)."
   }
 };
 
@@ -724,6 +732,9 @@ const HISTORICAL_RECORDS = {
       status: "active", 
       prediction: "Yes", 
       timeAgo: "2h ago",
+      isCreated: false,
+      isPredicted: true,
+      isFollowed: true,
       topOptions: [
         { option: "Yes", votes: 1250 },
         { option: "No", votes: 890 }
@@ -736,6 +747,9 @@ const HISTORICAL_RECORDS = {
       status: "active", 
       prediction: "No", 
       timeAgo: "3d ago",
+      isCreated: false,
+      isPredicted: true,
+      isFollowed: false,
       topOptions: [
         { option: "Yes", votes: 680 },
         { option: "No", votes: 920 }
@@ -749,6 +763,9 @@ const HISTORICAL_RECORDS = {
       prediction: "Yes", 
       outcome: "Yes", 
       timeAgo: "1w ago",
+      isCreated: true,
+      isPredicted: true,
+      isFollowed: false,
       topOptions: [
         { option: "Yes", votes: 1100 },
         { option: "No", votes: 450 }
@@ -761,9 +778,27 @@ const HISTORICAL_RECORDS = {
       status: "active", 
       prediction: "Yes", 
       timeAgo: "2w ago",
+      isCreated: true,
+      isPredicted: false,
+      isFollowed: true,
       topOptions: [
         { option: "Yes", votes: 320 },
         { option: "No", votes: 580 }
+      ]
+    },
+    { 
+      id: 5, 
+      title: "Will AI replace 50% of jobs by 2030?", 
+      date: "2024-06-12", 
+      status: "active", 
+      prediction: "No", 
+      timeAgo: "1d ago",
+      isCreated: false,
+      isPredicted: true,
+      isFollowed: true,
+      topOptions: [
+        { option: "Yes", votes: 850 },
+        { option: "No", votes: 620 }
       ]
     }
   ],
@@ -827,20 +862,20 @@ const HISTORICAL_RECORDS = {
     { 
       id: 3, 
       type: "vote", 
-      title: "Voted on prediction", 
-      target: "Will GPT-5 achieve AGI by Q4 2025?", 
-      date: "2024-06-09", 
-      timeAgo: "2d ago",
-      predictionTitle: "Will GPT-5 achieve AGI by Q4 2025?"
-    },
-    { 
-      id: 4, 
-      type: "vote", 
       title: "Voted on driver", 
       target: "Diplomatic back-channels remain open", 
       date: "2024-06-05", 
       timeAgo: "1w ago",
       predictionTitle: "Will US attack Venezuela before 2026?"
+    },
+    { 
+      id: 4, 
+      type: "vote", 
+      title: "Voted on opportunity", 
+      target: "Supply chain disruption creates arbitrage window", 
+      date: "2024-06-03", 
+      timeAgo: "2w ago",
+      predictionTitle: "Will Starship reach orbit before 2025?"
     }
   ]
 };
@@ -848,6 +883,361 @@ const HISTORICAL_RECORDS = {
 const FILTERS = ["Latest", "Business", "Politics", "Tech"];
 
 const DETAIL_TABS = ["Question", "Reasoning", "Opportunities", "Discussions"];
+
+// Leaderboard Data
+const LEADERBOARD_DATA = {
+  influence: [
+    { id: 1, userId: 'user1', username: 'Alex Chen', avatar: 'AC', category: 'Tech', drivers: 12, opportunities: 8, score: 1250 },
+    { id: 2, userId: 'user2', username: 'Sarah Kim', avatar: 'SK', category: 'Business', drivers: 15, opportunities: 5, score: 1180 },
+    { id: 3, userId: 'user3', username: 'Mike Johnson', avatar: 'MJ', category: 'Politics', drivers: 10, opportunities: 12, score: 1100 },
+    { id: 4, userId: 'user4', username: 'Emma Wilson', avatar: 'EW', category: 'Tech', drivers: 8, opportunities: 6, score: 980 },
+    { id: 5, userId: 'user5', username: 'David Lee', avatar: 'DL', category: 'Business', drivers: 9, opportunities: 4, score: 850 },
+    { id: 6, userId: 'user6', username: 'Lisa Zhang', avatar: 'LZ', category: 'Politics', drivers: 7, opportunities: 9, score: 720 },
+    { id: 7, userId: 'user7', username: 'Tom Brown', avatar: 'TB', category: 'Tech', drivers: 6, opportunities: 5, score: 650 },
+    { id: 8, userId: 'user8', username: 'Anna Taylor', avatar: 'AT', category: 'Business', drivers: 5, opportunities: 7, score: 580 },
+    { id: 9, userId: 'user9', username: 'Chris Wang', avatar: 'CW', category: 'Politics', drivers: 4, opportunities: 6, score: 520 },
+    { id: 10, userId: 'user10', username: 'Maria Garcia', avatar: 'MG', category: 'Tech', drivers: 3, opportunities: 4, score: 450 }
+  ],
+  accuracy: [
+    { id: 1, userId: 'user1', username: 'Alex Chen', avatar: 'AC', category: 'Tech', accuracy: 92, totalPredictions: 25, correctPredictions: 23 },
+    { id: 2, userId: 'user2', username: 'Sarah Kim', avatar: 'SK', category: 'Business', accuracy: 88, totalPredictions: 30, correctPredictions: 26 },
+    { id: 3, userId: 'user3', username: 'Mike Johnson', avatar: 'MJ', category: 'Politics', accuracy: 88, totalPredictions: 28, correctPredictions: 25 },
+    { id: 4, userId: 'user4', username: 'Emma Wilson', avatar: 'EW', category: 'Tech', accuracy: 85, totalPredictions: 20, correctPredictions: 17 },
+    { id: 5, userId: 'user5', username: 'David Lee', avatar: 'DL', category: 'Business', accuracy: 82, totalPredictions: 22, correctPredictions: 18 },
+    { id: 6, userId: 'user6', username: 'Lisa Zhang', avatar: 'LZ', category: 'Politics', accuracy: 80, totalPredictions: 18, correctPredictions: 14 },
+    { id: 7, userId: 'user7', username: 'Tom Brown', avatar: 'TB', category: 'Tech', accuracy: 78, totalPredictions: 15, correctPredictions: 12 },
+    { id: 8, userId: 'user8', username: 'Anna Taylor', avatar: 'AT', category: 'Business', accuracy: 75, totalPredictions: 16, correctPredictions: 12 },
+    { id: 9, userId: 'user9', username: 'Chris Wang', avatar: 'CW', category: 'Politics', accuracy: 73, totalPredictions: 14, correctPredictions: 10 },
+    { id: 10, userId: 'user10', username: 'Maria Garcia', avatar: 'MG', category: 'Tech', accuracy: 70, totalPredictions: 12, correctPredictions: 8 }
+  ],
+  aiModels: [
+    { id: 'ai1', name: 'Miromind', accuracy: 94, totalPredictions: 500, correctPredictions: 470, isAI: true },
+    { id: 'ai2', name: 'Gemini-3', accuracy: 91, totalPredictions: 480, correctPredictions: 437, isAI: true },
+    { id: 'ai3', name: 'Claude-4', accuracy: 89, totalPredictions: 450, correctPredictions: 401, isAI: true },
+    { id: 'ai4', name: 'GPT-5', accuracy: 87, totalPredictions: 520, correctPredictions: 452, isAI: true }
+  ],
+  // 当前用户数据
+  currentUser: {
+    influence: { score: 850, drivers: 24, opportunities: 8 },
+    accuracy: { accuracy: 65, totalPredictions: 142, correctPredictions: 89 }
+  },
+  opportunity: [
+    { 
+      id: 1, 
+      content: 'Volatility spike expected in Q3 2024 due to election uncertainty', 
+      action: 'Consider hedging positions before Q3 earnings season',
+      category: 'Business',
+      predictionId: 3,
+      predictionTitle: 'Will the Fed cut rates in March?',
+      contributorId: 'user2',
+      contributorName: 'Sarah Kim',
+      contributorAvatar: 'SK',
+      votes: 245
+    },
+    { 
+      id: 2, 
+      content: 'AI chip supply chain disruption creates arbitrage window', 
+      action: 'Monitor TSMC and NVIDIA supply chain updates',
+      category: 'Tech',
+      predictionId: 2,
+      predictionTitle: 'Will GPT-5 achieve AGI by Q4 2025?',
+      contributorId: 'user1',
+      contributorName: 'Alex Chen',
+      contributorAvatar: 'AC',
+      votes: 198
+    },
+    { 
+      id: 3, 
+      content: 'Diplomatic back-channels remain open despite public tensions', 
+      action: 'Watch for behind-the-scenes negotiation signals',
+      category: 'Politics',
+      predictionId: 1,
+      predictionTitle: 'Will US attack Venezuela before 2026?',
+      contributorId: 'user3',
+      contributorName: 'Mike Johnson',
+      contributorAvatar: 'MJ',
+      votes: 176
+    },
+    { 
+      id: 4, 
+      content: 'SpaceX contract opportunity matches tech hardware expertise', 
+      action: 'Research SpaceX supplier chain and contract timeline',
+      category: 'Tech',
+      predictionId: 0,
+      predictionTitle: 'Will Starship reach orbit before 2025?',
+      contributorId: 'user4',
+      contributorName: 'Emma Wilson',
+      contributorAvatar: 'EW',
+      votes: 152
+    },
+    { 
+      id: 5, 
+      content: 'Supply chain disruption creates arbitrage window', 
+      action: 'Identify alternative suppliers and pricing opportunities',
+      category: 'Business',
+      predictionId: 3,
+      predictionTitle: 'Will the Fed cut rates in March?',
+      contributorId: 'user5',
+      contributorName: 'David Lee',
+      contributorAvatar: 'DL',
+      votes: 134
+    },
+    { 
+      id: 6, 
+      content: 'Regulatory changes expected in Q4 create compliance opportunities', 
+      action: 'Prepare compliance frameworks early',
+      category: 'Business',
+      predictionId: 3,
+      predictionTitle: 'Will the Fed cut rates in March?',
+      contributorId: 'user8',
+      contributorName: 'Anna Taylor',
+      contributorAvatar: 'AT',
+      votes: 118
+    },
+    { 
+      id: 7, 
+      content: 'Military movement patterns suggest de-escalation timeline', 
+      action: 'Monitor official statements and troop movements',
+      category: 'Politics',
+      predictionId: 1,
+      predictionTitle: 'Will US attack Venezuela before 2026?',
+      contributorId: 'user6',
+      contributorName: 'Lisa Zhang',
+      contributorAvatar: 'LZ',
+      votes: 105
+    },
+    { 
+      id: 8, 
+      content: 'Quantum computing breakthrough creates investment window', 
+      action: 'Research quantum computing startups and partnerships',
+      category: 'Tech',
+      predictionId: 2,
+      predictionTitle: 'Will GPT-5 achieve AGI by Q4 2025?',
+      contributorId: 'user7',
+      contributorName: 'Tom Brown',
+      contributorAvatar: 'TB',
+      votes: 98
+    },
+    { 
+      id: 9, 
+      content: 'Trade agreement negotiations show positive signals', 
+      action: 'Watch for trade deal announcements and market impacts',
+      category: 'Politics',
+      predictionId: 1,
+      predictionTitle: 'Will US attack Venezuela before 2026?',
+      contributorId: 'user9',
+      contributorName: 'Chris Wang',
+      contributorAvatar: 'CW',
+      votes: 87
+    },
+    { 
+      id: 10, 
+      content: 'Semiconductor market recovery creates entry opportunity', 
+      action: 'Analyze semiconductor stock valuations and timing',
+      category: 'Tech',
+      predictionId: 0,
+      predictionTitle: 'Will Starship reach orbit before 2025?',
+      contributorId: 'user10',
+      contributorName: 'Maria Garcia',
+      contributorAvatar: 'MG',
+      votes: 76
+    }
+  ]
+};
+
+// Followed Predictions Updates Data
+const FOLLOWED_PREDICTIONS = [
+  {
+    id: 1,
+    prediction: {
+      id: 1,
+      category: "Politics",
+      question: "Will the United States attack Venezuela before 2026?",
+      imageGradient: "from-blue-600 to-slate-700",
+      stats: { yes: 45, no: 55 }
+    },
+    updateType: 'driver',
+    driverTitle: 'Increased military movement observed',
+    driverContent: 'Satellite imagery shows a 40% increase in naval vessel deployment in Key West naval base over the last 48 hours.',
+    votes: 850,
+    contributorName: 'Mike Johnson',
+    timeAgo: '2h ago'
+  },
+  {
+    id: 2,
+    prediction: {
+      id: 2,
+      category: "Tech",
+      question: "Will GPT-5 achieve AGI definition benchmarks by Q4 2025?",
+      imageGradient: "from-purple-600 to-indigo-700",
+      stats: { yes: 72, no: 28 }
+    },
+    updateType: 'opportunity',
+    opportunityTitle: 'AI chip supply chain disruption',
+    opportunityContent: 'Monitor TSMC and NVIDIA supply chain updates for potential arbitrage windows.',
+    votes: 198,
+    contributorName: 'Alex Chen',
+    timeAgo: '5h ago'
+  },
+  {
+    id: 3,
+    prediction: {
+      id: 3,
+      category: "Business",
+      question: "Will the Fed cut interest rates by at least 25bps in March?",
+      imageGradient: "from-emerald-600 to-teal-700",
+      stats: { yes: 30, no: 70 }
+    },
+    updateType: 'vote_change',
+    changeDirection: 'up',
+    changePercentage: 15,
+    newStats: { yes: 45, no: 55 },
+    timeAgo: '1d ago'
+  },
+  {
+    id: 4,
+    prediction: {
+      id: 0,
+      category: "Space",
+      question: "Did Starship reach orbit before 2025?",
+      imageGradient: "from-indigo-600 to-purple-600",
+      stats: { yes: 100, no: 0 }
+    },
+    updateType: 'driver',
+    driverTitle: 'FAA Approval Granted',
+    driverContent: 'Federal Aviation Administration has granted approval for the next launch window.',
+    votes: 1240,
+    contributorName: 'Sarah Kim',
+    timeAgo: '3h ago'
+  }
+];
+
+// Followed Users Activity Data
+const FOLLOWED_USERS = [
+  {
+    id: 1,
+    userId: 'user1',
+    userName: 'Alex Chen',
+    userAvatar: 'AC',
+    activityType: 'new_driver',
+    driverTitle: 'Increased military movement observed',
+    driverContent: 'Satellite imagery from Maxar Technologies shows a 40% increase in naval vessel deployment.',
+    prediction: {
+      id: 1,
+      category: "Politics",
+      question: "Will the United States attack Venezuela before 2026?",
+      imageGradient: "from-blue-600 to-slate-700"
+    },
+    timeAgo: '2h ago'
+  },
+  {
+    id: 2,
+    userId: 'user2',
+    userName: 'Sarah Kim',
+    userAvatar: 'SK',
+    activityType: 'new_opportunity',
+    opportunityTitle: 'Volatility spike expected in Q3 2024',
+    opportunityContent: 'Consider hedging positions before Q3 earnings season due to election uncertainty.',
+    prediction: {
+      id: 3,
+      category: "Business",
+      question: "Will the Fed cut interest rates by at least 25bps in March?",
+      imageGradient: "from-emerald-600 to-teal-700"
+    },
+    timeAgo: '4h ago'
+  },
+  {
+    id: 3,
+    userId: 'user3',
+    userName: 'Mike Johnson',
+    userAvatar: 'MJ',
+    activityType: 'prediction',
+    predictionValue: 'yes',
+    predictionReason: 'Based on recent diplomatic developments and military movements, I believe the probability has increased significantly.',
+    prediction: {
+      id: 1,
+      category: "Politics",
+      question: "Will the United States attack Venezuela before 2026?",
+      imageGradient: "from-blue-600 to-slate-700"
+    },
+    timeAgo: '6h ago'
+  },
+  {
+    id: 4,
+    userId: 'user1',
+    userName: 'Alex Chen',
+    userAvatar: 'AC',
+    activityType: 'comment',
+    commentContent: 'This is a very interesting development. The supply chain implications could be significant for the entire tech sector.',
+    prediction: {
+      id: 2,
+      category: "Tech",
+      question: "Will GPT-5 achieve AGI definition benchmarks by Q4 2025?",
+      imageGradient: "from-purple-600 to-indigo-700"
+    },
+    timeAgo: '8h ago'
+  },
+  {
+    id: 5,
+    userId: 'user2',
+    userName: 'Sarah Kim',
+    userAvatar: 'SK',
+    activityType: 'new_driver',
+    driverTitle: 'Federal Reserve signals potential rate cut',
+    driverContent: 'Recent statements from Fed officials suggest a more dovish stance than previously expected.',
+    prediction: {
+      id: 3,
+      category: "Business",
+      question: "Will the Fed cut interest rates by at least 25bps in March?",
+      imageGradient: "from-emerald-600 to-teal-700"
+    },
+    timeAgo: '12h ago'
+  }
+];
+
+// Mock User Profiles Data
+const MOCK_USER_PROFILES = {
+  user1: {
+    id: 'user1',
+    name: 'Alex Chen',
+    handle: '@alexchen',
+    bio: 'Tech enthusiast. Focused on AI and hardware innovation.',
+    avatar: 'AC',
+    followers: 2450,
+    following: 120,
+    badges: [
+      { type: 'identity', label: 'AI Domain Expert', level: 3, icon: '🤖', color: 'bg-purple-50 text-purple-600 border-purple-100' },
+      { type: 'achievement', label: 'Oct Top 10%', level: 1, icon: '🏆', color: 'bg-yellow-50 text-yellow-600 border-yellow-100' }
+    ],
+    isFollowing: false
+  },
+  user2: {
+    id: 'user2',
+    name: 'Sarah Kim',
+    handle: '@sarahkim',
+    bio: 'Business analyst. Expert in market trends and financial predictions.',
+    avatar: 'SK',
+    followers: 1890,
+    following: 85,
+    badges: [
+      { type: 'identity', label: 'Business Expert', level: 2, icon: '💼', color: 'bg-blue-50 text-blue-600 border-blue-100' }
+    ],
+    isFollowing: false
+  },
+  user3: {
+    id: 'user3',
+    name: 'Mike Johnson',
+    handle: '@mikej',
+    bio: 'Political analyst. Tracking global geopolitical developments.',
+    avatar: 'MJ',
+    followers: 3200,
+    following: 200,
+    badges: [
+      { type: 'identity', label: 'Politics Expert', level: 3, icon: '🏛️', color: 'bg-blue-100 text-blue-600 border-blue-100' }
+    ],
+    isFollowing: true
+  }
+};
 
 // Export mock data for use in components
 export { 
@@ -862,6 +1252,10 @@ export {
   COGNITION_TREND_DATA,
   COGNITIVE_DIMENSIONS,
   HISTORICAL_RECORDS,
+  LEADERBOARD_DATA,
+  MOCK_USER_PROFILES,
+  FOLLOWED_PREDICTIONS,
+  FOLLOWED_USERS,
   NEWS_DETAILS,
   RULES_TEXT,
   callGemini
@@ -890,6 +1284,35 @@ export default function App() {
   };
 
   const renderContent = () => {
+
+    // 0. Search View (can be shown from any tab)
+    if (detailSubView === 'search') {
+      return (
+        <SearchView
+          onBack={() => setDetailSubView(null)}
+          onNewsClick={(data) => {
+            setSelectedCard(data);
+            setDetailSubView('news');
+          }}
+          onQuestionClick={(data) => {
+            setSelectedCard(data);
+            setDetailSubView(null);
+          }}
+        />
+      );
+    }
+
+    // 0.1. User Profile View (can be shown from any tab)
+    if (detailSubView && detailSubView.startsWith('user_profile_')) {
+      const userId = detailSubView.replace('user_profile_', '');
+      return (
+        <UserProfileView 
+          userId={userId} 
+          onBack={() => setDetailSubView(null)}
+          onNavigate={(view) => setDetailSubView(view)}
+        />
+      );
+    }
 
     // 1. Prediction Card Details Flow
 
@@ -993,7 +1416,10 @@ export default function App() {
 
              data={selectedCard}
 
-             onBack={() => setDetailSubView('news')} 
+             onBack={() => {
+               setSelectedCard(null);
+               setDetailSubView(null);
+             }} 
 
            />
 
@@ -1007,7 +1433,10 @@ export default function App() {
 
           data={selectedCard} 
 
-          onBack={() => setDetailSubView('news')} 
+          onBack={() => {
+            setSelectedCard(null);
+            setDetailSubView(null);
+          }} 
 
           setSubView={setDetailSubView}
 
@@ -1022,6 +1451,8 @@ export default function App() {
             setDetailSubView('collectiveReasoning');
 
           }}
+
+          initialTab={detailSubView === 'opportunities_from_trend' ? 'Opportunities' : 'Question'}
 
         />
 
@@ -1053,6 +1484,67 @@ export default function App() {
 
         );
 
+      }
+
+      if (detailSubView && detailSubView.startsWith('activities_all')) {
+        const tab = detailSubView.replace('activities_all_', '') || 'prediction';
+        return <ActivitiesListView onBack={() => setDetailSubView(null)} initialTab={tab} />;
+      }
+
+      // Followers/Following List View
+      if (detailSubView && detailSubView.startsWith('followers_')) {
+        const userId = detailSubView.replace('followers_', '');
+        return (
+          <FollowersFollowingListView
+            userId={userId}
+            type="followers"
+            onBack={() => setDetailSubView(null)}
+            onUserClick={(clickedUserId) => {
+              setDetailSubView(`user_profile_${clickedUserId}`);
+            }}
+          />
+        );
+      }
+
+      if (detailSubView && detailSubView.startsWith('following_')) {
+        const userId = detailSubView.replace('following_', '');
+        return (
+          <FollowersFollowingListView
+            userId={userId}
+            type="following"
+            onBack={() => setDetailSubView(null)}
+            onUserClick={(clickedUserId) => {
+              setDetailSubView(`user_profile_${clickedUserId}`);
+            }}
+          />
+        );
+      }
+
+      // Handle list_followers and list_following from Me tab (current user)
+      if (detailSubView === 'list_followers') {
+        return (
+          <FollowersFollowingListView
+            userId="current"
+            type="followers"
+            onBack={() => setDetailSubView(null)}
+            onUserClick={(clickedUserId) => {
+              setDetailSubView(`user_profile_${clickedUserId}`);
+            }}
+          />
+        );
+      }
+
+      if (detailSubView === 'list_following') {
+        return (
+          <FollowersFollowingListView
+            userId="current"
+            type="following"
+            onBack={() => setDetailSubView(null)}
+            onUserClick={(clickedUserId) => {
+              setDetailSubView(`user_profile_${clickedUserId}`);
+            }}
+          />
+        );
       }
 
       if (detailSubView && detailSubView.startsWith('list_')) {
@@ -1096,17 +1588,46 @@ export default function App() {
 
             }}
 
+            onSearchClick={() => {
+              setDetailSubView('search');
+            }}
+
           />
 
         );
 
       case 'predict':
 
-        return <div className="flex items-center justify-center h-full text-slate-400 bg-gray-50">Predict View</div>;
+        return (
+          <FollowedView 
+            onCardClick={(prediction) => {
+              setSelectedCard(prediction);
+              setDetailSubView(null);
+            }}
+            onUserClick={(userId) => {
+              setDetailSubView(`user_profile_${userId}`);
+            }}
+          />
+        );
 
       case 'trend':
 
-        return <div className="flex items-center justify-center h-full text-slate-400 bg-gray-50">Trend View</div>;
+        return (
+          <TrendView 
+            onUserClick={(userId) => {
+              // 跳转到用户主页（暂时使用GenericListView作为占位）
+              setDetailSubView(`user_profile_${userId}`);
+            }}
+            onMomentumClick={(predictionId, momentumId) => {
+              // 找到对应的预测卡片并跳转到Opportunities tab
+              const card = MOCK_CARDS.find(c => c.id === predictionId);
+              if (card) {
+                setSelectedCard(card);
+                setDetailSubView('opportunities_from_trend');
+              }
+            }}
+          />
+        );
 
       default:
 
@@ -1128,6 +1649,10 @@ export default function App() {
 
                setDetailSubView(null); 
 
+            }}
+
+            onSearchClick={() => {
+              setDetailSubView('search');
             }}
 
           />
@@ -1176,9 +1701,9 @@ export default function App() {
 
           >
 
-            <Hexagon size={24} />
+            <Bookmark size={24} />
 
-            <span className="text-[10px] font-medium">Predict</span>
+            <span className="text-[10px] font-medium">Followed</span>
 
           </button>
 

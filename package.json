@@ -1,7 +1,7 @@
 {
   "name": "prediction-app",
   "version": "1.0.0",
-  "description": "Predix Prediction Platform",
+  "description": "Probable Prediction Platform",
   "type": "module",
   "scripts": {
     "dev": "vite",

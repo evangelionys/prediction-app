@@ -47,7 +47,7 @@ const OpportunityCard = ({ opp, showReasoning = false, onClick, className = "" }
         <div className="mb-4 bg-gray-50 rounded-lg p-3 border border-gray-200">
           <div className="flex items-center gap-1.5 text-cyan-600 mb-2">
             <Bot size={14} />
-            <span className="text-xs font-bold uppercase tracking-wide">Predix Logic Chain</span>
+            <span className="text-xs font-bold uppercase tracking-wide">Probable Logic Chain</span>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line font-mono">
             {opp.reasoningChain}

@@ -270,7 +270,7 @@ const MyGrowthView = ({ onNavigate }) => {
              <div className="p-2 bg-cyan-100 rounded-xl border border-cyan-200 glow-effect pulse-glow">
                <Sparkles size={20} className="text-cyan-600" />
              </div>
-             <span className="text-sm font-bold uppercase tracking-widest text-cyan-600 font-mono">PREDIX AI INSIGHT</span>
+             <span className="text-sm font-bold uppercase tracking-widest text-cyan-600 font-mono">PROBABLE AI INSIGHT</span>
            </div>
            <div className="flex items-center gap-1.5 text-[11px] text-cyan-600 bg-cyan-50 px-3 py-1 rounded-full border border-cyan-200 font-mono">
               <Clock size={12} /> Updated Today

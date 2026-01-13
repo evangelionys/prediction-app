@@ -5,7 +5,7 @@ import { MOCK_CARDS } from '../App';
 
 const FILTERS = ["Latest", "Business", "Politics", "Tech"];
 
-const FeedView = ({ onCardClick, onNewsClick, onQuestionClick }) => {
+const FeedView = ({ onCardClick, onNewsClick, onQuestionClick, onSearchClick }) => {
   const [activeFilter, setActiveFilter] = useState("Latest");
   
   return (
@@ -16,11 +16,14 @@ const FeedView = ({ onCardClick, onNewsClick, onQuestionClick }) => {
             <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center shadow-md">
               <TrendingUp className="text-white" size={20} />
             </div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Predix</h1>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Probable</h1>
           </div>
-          <div className="bg-gray-100 p-2 rounded-full hover:bg-gray-200 transition-colors cursor-pointer">
+          <button
+            onClick={onSearchClick}
+            className="bg-gray-100 p-2 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
+          >
             <Search size={20} className="text-slate-600" />
-          </div>
+          </button>
         </div>
         
         <div className="flex overflow-x-auto px-4 pb-3 gap-3 no-scrollbar">
