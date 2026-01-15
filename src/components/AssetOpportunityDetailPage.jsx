@@ -243,8 +243,8 @@ const HOT_ASSETS = [
     bearishViews: [
       { id: 1, title: 'China market risks', description: 'Regulatory and market risks in China may impact sales.' }
     ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 193 + Math.random() * 5
       }))
     },
@@ -267,8 +267,8 @@ const HOT_ASSETS = [
       bearishViews: [
         { id: 1, title: 'Valuation concerns', description: 'High valuation may limit upside potential.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 470 + Math.random() * 20
       }))
     },
@@ -291,8 +291,8 @@ const HOT_ASSETS = [
       bearishViews: [
         { id: 1, title: 'Competition intensifies', description: 'Increased competition in cloud and AI markets.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 370 + Math.random() * 15
       }))
     },
@@ -315,8 +315,8 @@ const HOT_ASSETS = [
       bearishViews: [
         { id: 1, title: 'Margin pressure', description: 'Competitive pressures may impact profit margins.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 150 + Math.random() * 5
       }))
     },
@@ -339,8 +339,8 @@ const HOT_ASSETS = [
       bearishViews: [
         { id: 1, title: 'Dollar strength', description: 'Strong US dollar may limit silver price gains.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 24 + Math.random() * 1.5
       }))
     },
@@ -363,8 +363,8 @@ const HOT_ASSETS = [
       bearishViews: [
         { id: 1, title: 'China slowdown', description: 'Slowing Chinese economy may reduce copper demand.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 4.1 + Math.random() * 0.3
       }))
     },
@@ -387,8 +387,8 @@ const HOT_ASSETS = [
         { id: 1, title: 'Economic weakness', description: 'Weak European economic data pressures the euro.' },
         { id: 2, title: 'Political uncertainty', description: 'Political risks in Europe may weaken the currency.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 1.08 + Math.random() * 0.01
       }))
     },
@@ -411,8 +411,8 @@ const HOT_ASSETS = [
         { id: 1, title: 'Brexit impact', description: 'Ongoing Brexit-related economic challenges persist.' },
         { id: 2, title: 'Inflation concerns', description: 'Persistent inflation may pressure the currency.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 1.26 + Math.random() * 0.01
       }))
     },
@@ -435,8 +435,8 @@ const HOT_ASSETS = [
         { id: 1, title: 'ECB policy uncertainty', description: 'Uncertain ECB policy path may increase volatility.' },
         { id: 2, title: 'Inflation risks', description: 'Persistent inflation may pressure bond prices.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 97.5 + Math.random() * 0.6
       }))
     },
@@ -459,8 +459,8 @@ const HOT_ASSETS = [
       bearishViews: [
         { id: 1, title: 'Supply recovery', description: 'Improved growing conditions may increase supply.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 5.7 + Math.random() * 0.3
       }))
     },
@@ -483,8 +483,8 @@ const HOT_ASSETS = [
       bearishViews: [
         { id: 1, title: 'Production growth', description: 'Rising US production may pressure prices.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 2.7 + Math.random() * 0.3
       }))
     }
@@ -754,7 +754,7 @@ const AssetOpportunityDetailPage = ({ assetId, onBack, onPredictionClick }) => {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-900">14-Day Price Trend: {asset.asset}</h3>
+              <h3 className="text-lg font-bold text-slate-900">30-Day Price Trend: {asset.asset}</h3>
               <button
                 onClick={() => setShowPriceChart(false)}
                 className="p-2 rounded-full hover:bg-gray-100 text-slate-600"
@@ -836,7 +836,7 @@ const AssetOpportunityDetailPage = ({ assetId, onBack, onPredictionClick }) => {
                   </svg>
                 </div>
                 <div className="flex justify-between mt-2 text-[10px] text-slate-400 px-2">
-                  {asset.priceHistory.filter((_, idx) => idx % 3 === 0 || idx === asset.priceHistory.length - 1).map((point, idx, arr) => {
+                  {asset.priceHistory.filter((_, idx) => idx % 5 === 0 || idx === asset.priceHistory.length - 1).map((point, idx, arr) => {
                     return (
                       <span key={idx} className="flex-1 text-center">
                         {point.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}

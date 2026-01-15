@@ -266,8 +266,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
         { id: 1, title: 'Regulatory uncertainty remains', description: 'Potential regulatory changes could negatively impact Bitcoin adoption.' },
         { id: 2, title: 'High volatility concerns', description: 'Bitcoin remains highly volatile, making it risky for conservative investors.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 42000 + Math.random() * 2000
       }))
     },
@@ -289,8 +289,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
       bearishViews: [
         { id: 1, title: 'Global demand concerns', description: 'Slowing global economic growth may reduce oil demand.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 75 + Math.random() * 5
       }))
     },
@@ -313,8 +313,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
         { id: 1, title: 'Political uncertainty in France', description: 'Political risks may increase volatility in French bonds.' },
         { id: 2, title: 'Inflation concerns', description: 'Persistent inflation may pressure bond prices downward.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 97.5 + Math.random() * 1
       }))
     },
@@ -338,8 +338,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
       bearishViews: [
         { id: 1, title: 'Inflation persistence', description: 'If inflation remains elevated, bonds may underperform.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 100.5 + Math.random() * 2
       }))
     },
@@ -362,8 +362,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
       bearishViews: [
         { id: 1, title: 'Strong dollar pressure', description: 'A strong US dollar may limit gold price gains.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 2000 + Math.random() * 50
       }))
     },
@@ -387,8 +387,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
         { id: 1, title: 'Valuation concerns', description: 'Current valuations may be stretched relative to earnings.' },
         { id: 2, title: 'Recession risks', description: 'Potential economic slowdown could pressure stock prices.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 4800 + Math.random() * 100
       }))
     },
@@ -411,8 +411,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
       bearishViews: [
         { id: 1, title: 'Competition from alternatives', description: 'Other blockchains may capture market share from Ethereum.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 2500 + Math.random() * 200
       }))
     },
@@ -435,8 +435,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
         { id: 1, title: 'Yield differential', description: 'Wide yield differentials continue to pressure the yen.' },
         { id: 2, title: 'Weak economic data', description: 'Weak economic indicators suggest continued yen weakness.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 148 + Math.random() * 2
       }))
     },
@@ -460,8 +460,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
         { id: 1, title: 'Competition intensifies', description: 'Increasing competition in EV market may pressure margins.' },
         { id: 2, title: 'Demand concerns', description: 'Slowing EV demand growth could impact sales.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 250 + Math.random() * 10
       }))
     },
@@ -484,8 +484,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
       bearishViews: [
         { id: 1, title: 'China market risks', description: 'Regulatory and market risks in China may impact sales.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 193 + Math.random() * 5
       }))
     },
@@ -508,8 +508,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
       bearishViews: [
         { id: 1, title: 'Valuation concerns', description: 'High valuation may limit upside potential.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 470 + Math.random() * 20
       }))
     },
@@ -532,8 +532,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
       bearishViews: [
         { id: 1, title: 'Competition intensifies', description: 'Increased competition in cloud and AI markets.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 370 + Math.random() * 15
       }))
     },
@@ -556,8 +556,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
       bearishViews: [
         { id: 1, title: 'Margin pressure', description: 'Competitive pressures may impact profit margins.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 150 + Math.random() * 5
       }))
     },
@@ -580,8 +580,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
       bearishViews: [
         { id: 1, title: 'Dollar strength', description: 'Strong US dollar may limit silver price gains.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 24 + Math.random() * 1.5
       }))
     },
@@ -604,8 +604,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
       bearishViews: [
         { id: 1, title: 'China slowdown', description: 'Slowing Chinese economy may reduce copper demand.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 4.1 + Math.random() * 0.3
       }))
     },
@@ -628,8 +628,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
         { id: 1, title: 'Economic weakness', description: 'Weak European economic data pressures the euro.' },
         { id: 2, title: 'Political uncertainty', description: 'Political risks in Europe may weaken the currency.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 1.08 + Math.random() * 0.01
       }))
     },
@@ -652,8 +652,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
         { id: 1, title: 'Brexit impact', description: 'Ongoing Brexit-related economic challenges persist.' },
         { id: 2, title: 'Inflation concerns', description: 'Persistent inflation may pressure the currency.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 1.26 + Math.random() * 0.01
       }))
     },
@@ -676,8 +676,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
         { id: 1, title: 'ECB policy uncertainty', description: 'Uncertain ECB policy path may increase volatility.' },
         { id: 2, title: 'Inflation risks', description: 'Persistent inflation may pressure bond prices.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 97.5 + Math.random() * 0.6
       }))
     },
@@ -700,8 +700,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
       bearishViews: [
         { id: 1, title: 'Supply recovery', description: 'Improved growing conditions may increase supply.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 5.7 + Math.random() * 0.3
       }))
     },
@@ -724,8 +724,8 @@ const TrendView = ({ onUserClick, onMomentumClick, onPredictionClick, initialTab
       bearishViews: [
         { id: 1, title: 'Production growth', description: 'Rising US production may pressure prices.' }
       ],
-      priceHistory: Array.from({ length: 14 }, (_, i) => ({
-        date: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000),
+      priceHistory: Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
         price: 2.7 + Math.random() * 0.3
       }))
     }
