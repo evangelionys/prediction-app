@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Edit3, Share2, Bell, ArrowRight, Sparkles, Clock, Lightbulb, Target, Bot, MessageSquare, BrainCircuit, Zap, X, CheckCircle2, Plus } from 'lucide-react';
-import { USER_PROFILE, USER_METRICS, USER_STATS, COGNITION_TREND_DATA, COGNITIVE_DIMENSIONS, HISTORICAL_RECORDS } from '../App';
+import React, { useState, useMemo } from 'react';
+import { Edit3, Share2, Bell, ArrowRight, Sparkles, Clock, Lightbulb, Target, Bot, MessageSquare, BrainCircuit, Zap, X, CheckCircle2, Plus, RefreshCw, Lock } from 'lucide-react';
+import { USER_PROFILE, USER_METRICS, USER_STATS, COGNITION_TREND_DATA, COGNITIVE_DIMENSIONS, HISTORICAL_RECORDS, MOCK_CARDS } from '../App';
 import EditProfileModal from './EditProfileModal';
 
 // 认知雷达图组件
@@ -116,7 +116,7 @@ const CognitiveRadarChart = ({ onPointClick }) => {
     <div className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-cyan-200/50 shadow-lg relative overflow-hidden">
       <div className="relative z-10">
         <div className="flex items-center gap-2 mb-4">
-          <BrainCircuit size={18} className="text-cyan-600" />
+          <BrainCircuit size={14} className="text-cyan-600" />
           <h3 className="text-sm font-bold text-slate-900">Cognitive Profile</h3>
           <div className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded ${
             levelInfo.level === 'normal' ? 'bg-slate-100 text-slate-600' :
@@ -550,6 +550,12 @@ const MyGrowthView = ({ onNavigate }) => {
   const [activePredictionFilter, setActivePredictionFilter] = useState('predicted');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [localUserProfile, setLocalUserProfile] = useState(USER_PROFILE);
+  const [lastUpdateTime, setLastUpdateTime] = useState(() => {
+    // 从 localStorage 读取上次更新时间，如果没有则设置为7天前
+    const saved = localStorage.getItem('aiInsightLastUpdate');
+    return saved ? parseInt(saved) : Date.now() - 7 * 24 * 60 * 60 * 1000;
+  });
+  const [isUpdating, setIsUpdating] = useState(false);
   
   const ProfileHeader = () => (
     <div className="bg-white/90 backdrop-blur-md p-4 pb-4 border-b border-cyan-100/50 relative">
@@ -614,64 +620,225 @@ const MyGrowthView = ({ onNavigate }) => {
     </div>
   );
 
-  const InsightCard = () => (
-    <div className="mx-4 mb-8 bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-lg relative group cursor-pointer border border-cyan-200/50 hover:shadow-xl hover:border-cyan-300 transition-all hover-glow" onClick={() => onNavigate('ai_insight')}>
-      <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 grid-background opacity-20" />
-        <div className="absolute top-0 right-0 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute -right-8 -bottom-8 p-4 transform rotate-12 opacity-5">
-          <Bot size={180} className="text-cyan-600" />
+  // 计算用户预测数据
+  const predictionAnalysis = useMemo(() => {
+    // 获取用户所有预测记录（实际应该从API获取，这里使用HISTORICAL_RECORDS作为模拟）
+    const allPredictions = HISTORICAL_RECORDS.predictions || [];
+    // 临时设置：为了测试解锁状态，将总数设置为30以上
+    const totalPredictions = Math.max(allPredictions.length, 30);
+    
+    // 获取已结算的预测（status === 'closed'）
+    const settledPredictions = allPredictions.filter(p => p.status === 'closed' && p.isPredicted);
+    
+    // 计算平均准确率
+    const correctCount = settledPredictions.filter(p => p.prediction === p.outcome).length;
+    const averageAccuracy = settledPredictions.length > 0 
+      ? (correctCount / settledPredictions.length) * 100 
+      : 0;
+    
+    // 创建标题到分类的映射（从MOCK_CARDS获取）
+    // 将简单分类映射到更细分的分类
+    const categoryMapping = {
+      'Space': 'Space & Aerospace',
+      'Tech': 'AI & Technology',
+      'Business': 'Stocks & Indexes',
+      'Politics': 'Conflict & Security',
+      'Geopolitics': 'Conflict & Security',
+      'Other': 'Other'
+    };
+    
+    const titleToCategory = {};
+    (MOCK_CARDS || []).forEach(card => {
+      if (card.question) {
+        const baseCategory = card.category || 'Other';
+        titleToCategory[card.question] = categoryMapping[baseCategory] || baseCategory;
+      }
+    });
+    
+    // 按分类统计（使用category作为二级分类的占位，实际应该使用subcategory）
+    const categoryStats = {};
+    settledPredictions.forEach(p => {
+      // 从MOCK_CARDS中查找分类，如果没有则使用默认值
+      const category = titleToCategory[p.title] || p.category || 'Other';
+      if (!categoryStats[category]) {
+        categoryStats[category] = { total: 0, correct: 0 };
+      }
+      categoryStats[category].total++;
+      if (p.prediction === p.outcome) {
+        categoryStats[category].correct++;
+      }
+    });
+    
+    // 计算每个分类的准确率
+    const categoryAccuracies = Object.entries(categoryStats).map(([category, stats]) => ({
+      category,
+      total: stats.total,
+      correct: stats.correct,
+      accuracy: stats.total > 0 ? (stats.correct / stats.total) * 100 : 0
+    }));
+    
+    // 找出优势：准确率明显高于平均且>=5题的分类
+    const strengths = categoryAccuracies
+      .filter(cat => cat.total >= 5 && cat.accuracy > averageAccuracy + 10)
+      .sort((a, b) => b.accuracy - a.accuracy);
+    const strength = strengths.length > 0 ? strengths[0] : null;
+    
+    // 如果没有符合条件的优势，选择答题量最多的分类
+    const topByVolume = categoryAccuracies.length > 0
+      ? categoryAccuracies.sort((a, b) => b.total - a.total)[0]
+      : null;
+    const finalStrength = strength || topByVolume;
+    
+    // 找出盲区：准确率明显低于平均且>=5题的分类
+    const blindSpots = categoryAccuracies
+      .filter(cat => cat.total >= 5 && cat.accuracy < averageAccuracy - 10)
+      .sort((a, b) => a.accuracy - b.accuracy);
+    const blindSpot = blindSpots.length > 0 ? blindSpots[0] : null;
+    
+    // 如果没有符合条件的盲区，推荐答题较少的分类
+    const allCategories = ['AI & Technology', 'Stocks & Indexes', 'Conflict & Security', 'Space & Aerospace', 'Crypto & Blockchain', 'Energy & Commodities'];
+    const userCategories = new Set(categoryAccuracies.map(c => c.category));
+    const recommendedCategory = allCategories.find(cat => !userCategories.has(cat)) || 
+      categoryAccuracies.sort((a, b) => a.total - b.total)[0]?.category || 'AI & Technology';
+    
+    return {
+      totalPredictions,
+      settledCount: settledPredictions.length,
+      averageAccuracy,
+      strength: finalStrength,
+      blindSpot: blindSpot || { category: recommendedCategory, total: 0, accuracy: 0, isRecommended: true }
+    };
+  }, []);
+  
+  const InsightCard = () => {
+    const isLocked = predictionAnalysis.totalPredictions < 30;
+    const daysSinceUpdate = Math.floor((Date.now() - lastUpdateTime) / (24 * 60 * 60 * 1000));
+    const canUpdate = daysSinceUpdate >= 7;
+    
+    const handleUpdate = (e) => {
+      e.stopPropagation();
+      if (!canUpdate || isUpdating) return;
+      setIsUpdating(true);
+      // 模拟更新过程
+      setTimeout(() => {
+        setLastUpdateTime(Date.now());
+        localStorage.setItem('aiInsightLastUpdate', Date.now().toString());
+        setIsUpdating(false);
+      }, 1000);
+    };
+    
+    const handleDeepAnalysis = (e) => {
+      e.stopPropagation();
+      onNavigate('ai_analyst');
+    };
+    
+    return (
+      <div className={`mx-4 mb-8 bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-lg relative border transition-all ${
+        isLocked 
+          ? 'border-gray-200/50 opacity-60' 
+          : 'border-cyan-200/50 hover:shadow-xl hover:border-cyan-300 hover-glow cursor-pointer'
+      }`} onClick={!isLocked ? handleDeepAnalysis : undefined}>
+        <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 grid-background opacity-20" />
+          <div className="absolute top-0 right-0 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl" />
+          {!isLocked && (
+            <>
+              <div className="absolute -right-8 -bottom-8 p-4 transform rotate-12 opacity-5">
+                <Bot size={180} className="text-cyan-600" />
+              </div>
+              <div className="scan-line absolute inset-0" />
+            </>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-50/40 via-transparent to-blue-50/30" />
         </div>
-        <div className="scan-line absolute inset-0" />
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-50/40 via-transparent to-blue-50/30" />
-      </div>
-      
-      <div className="relative z-10">
-        <div className="flex items-center justify-between mb-4">
-           <div className="flex items-center gap-3">
-             <div className="p-2 bg-cyan-100 rounded-xl border border-cyan-200 glow-effect pulse-glow">
-               <Sparkles size={20} className="text-cyan-600" />
-             </div>
-             <span className="text-sm font-bold uppercase tracking-widest text-cyan-600 font-mono">AI INSIGHT</span>
-           </div>
-           <div className="flex items-center gap-1.5 text-[11px] text-cyan-600 bg-cyan-50 px-3 py-1 rounded-full border border-cyan-200 font-mono">
-              <Clock size={12} /> Updated Today
-           </div>
-        </div>
-        <div className="space-y-4">
-          <div className="flex gap-3">
-            <div className="mt-0.5 p-1.5 bg-yellow-100 rounded-lg border border-yellow-200 shrink-0 h-fit">
-               <Lightbulb size={18} className="text-yellow-600" />
+        
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Sparkles size={14} className={isLocked ? 'text-gray-400' : 'text-cyan-600'} />
+              <h3 className={`text-sm font-bold text-slate-900 ${isLocked ? 'opacity-60' : ''}`}>AI Insight</h3>
             </div>
-            <div className="flex-1 min-w-0">
-               <div className="text-xs font-bold text-slate-500 uppercase mb-1.5">Behavioral Pattern</div>
-               <p className="text-sm leading-relaxed text-slate-700 font-medium whitespace-normal break-words">
-                 Your accuracy in <span className="text-slate-900 font-bold">Tech hardware</span> is elite, but you consistently underestimate <span className="text-rose-600 font-bold">political tail risks</span>.
-               </p>
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border font-mono text-[11px] transition-all ${
+              isLocked
+                ? 'text-gray-400 bg-gray-50/50 border-gray-200/50'
+                : 'text-cyan-500/70 bg-cyan-50/50 border-cyan-200/50 hover:bg-cyan-50/70 hover:border-cyan-200/70'
+            }`}>
+              {!isLocked && (
+                <button
+                  onClick={handleUpdate}
+                  disabled={!canUpdate || isUpdating}
+                  className={`p-0.5 rounded transition-all ${
+                    canUpdate && !isUpdating
+                      ? 'text-cyan-500/70 hover:text-cyan-600 hover:bg-cyan-100/50 cursor-pointer'
+                      : 'text-gray-400 cursor-not-allowed'
+                  }`}
+                  title={canUpdate && !isUpdating ? 'Update analysis' : `Next update in ${7 - daysSinceUpdate} days`}
+                >
+                  <RefreshCw size={11} className={isUpdating ? 'animate-spin' : ''} />
+                </button>
+              )}
+              <span className={isLocked ? 'text-gray-400' : 'text-cyan-500/70'}>
+                {isLocked ? 'Locked' : daysSinceUpdate === 0 ? 'Updated Today' : `Updated ${daysSinceUpdate}d ago`}
+              </span>
             </div>
           </div>
           
-          <div className="h-px w-full bg-gray-200" />
-          
-          <div className="flex gap-3">
-            <div className="mt-0.5 p-1.5 bg-emerald-100 rounded-lg border border-emerald-200 shrink-0 h-fit">
-               <Target size={18} className="text-emerald-600" />
+          {isLocked ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Unlock AI Analyst when you reach <span className="font-bold text-slate-900">30 predictions</span> to analyze your strengths and cognitive blind spots
+              </p>
+              <div className="mt-3 text-xs text-slate-500">
+                Progress: {predictionAnalysis.totalPredictions}/30
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-               <div className="text-xs font-bold text-slate-500 uppercase mb-1.5">Exclusive Opportunity</div>
-               <p className="text-sm leading-relaxed text-slate-700 font-medium whitespace-normal break-words">
-                 A new <span className="text-slate-900 font-bold">SpaceX contract</span> prediction matches your strengths perfectly (+85% Match).
-               </p>
-            </div>
-          </div>
-        </div>
-        <div className="mt-4 flex items-center justify-end text-xs font-bold text-slate-500 group-hover:text-cyan-600 transition-colors gap-2 font-mono">
-          Tap for Deep Analysis <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+          ) : (
+            <>
+              <div className="space-y-3">
+                {/* Combined Strength & Blind Spot */}
+                <div className="flex gap-3">
+                  <div className="mt-0.5 p-1.5 bg-cyan-100/50 rounded-lg border border-cyan-200/50 shrink-0 h-fit">
+                    <Lightbulb size={16} className="text-cyan-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm leading-relaxed text-slate-700 font-medium whitespace-normal break-words">
+                      {predictionAnalysis.strength && (
+                        <>
+                          You excel in <span className="text-emerald-600 font-bold">{predictionAnalysis.strength.category === 'Other' ? 'Stocks & Indexes' : predictionAnalysis.strength.category}</span>
+                          {predictionAnalysis.strength.total >= 5 && (
+                            <span className="text-emerald-600"> ({predictionAnalysis.strength.accuracy.toFixed(0)}% vs {predictionAnalysis.averageAccuracy.toFixed(0)}%)</span>
+                          )}
+                        </>
+                      )}
+                      {predictionAnalysis.blindSpot && (
+                        <>
+                          {predictionAnalysis.strength && ', '}
+                          {predictionAnalysis.blindSpot.isRecommended ? (
+                            <>but consider exploring <span className="text-rose-600 font-bold">{predictionAnalysis.blindSpot.category}</span> where you have fewer predictions</>
+                          ) : (
+                            <>but need improvement in <span className="text-rose-600 font-bold">{predictionAnalysis.blindSpot.category}</span>
+                              <span className="text-rose-600"> ({predictionAnalysis.blindSpot.accuracy.toFixed(0)}% vs {predictionAnalysis.averageAccuracy.toFixed(0)}%)</span>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div 
+                className="mt-4 flex items-center justify-end text-xs font-bold text-slate-500 group-hover:text-cyan-600 transition-colors gap-2 font-mono cursor-pointer"
+                onClick={handleDeepAnalysis}
+              >
+                Tap for Deep Analysis <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </div>
+            </>
+          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <>
@@ -691,11 +858,11 @@ const MyGrowthView = ({ onNavigate }) => {
           </div>
         </div>
         <ProfileHeader />
-        <div className="px-4 pt-2 pb-4">
+        <InsightCard />
+        <div className="px-4 mb-8">
           <CognitiveRadarChart onPointClick={(index, dimension) => setSelectedDimension({ index, ...dimension })} />
         </div>
-        <InsightCard />
-        <div className="p-4 pt-0">
+        <div className="px-4 mb-8">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Zap size={14} className="text-cyan-600" />

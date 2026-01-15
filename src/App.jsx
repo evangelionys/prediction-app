@@ -114,6 +114,7 @@ import {
 import DetailPage from './components/DetailPage';
 import NewsDetailPage from './components/NewsDetailPage';
 import SettledDetailPage from './components/SettledDetailPage';
+import AssetOpportunityDetailPage from './components/AssetOpportunityDetailPage';
 import DriversListView from './components/DriversListView';
 import OpportunitiesListView from './components/OpportunitiesListView';
 import AIChatView from './components/AIChatView';
@@ -882,7 +883,7 @@ const HISTORICAL_RECORDS = {
 
 const FILTERS = ["Latest", "Business", "Politics", "Tech"];
 
-const DETAIL_TABS = ["Question", "Reasoning", "Opportunities", "Discussions"];
+const DETAIL_TABS = ["Question", "Opportunities", "Discussions"];
 
 // Leaderboard Data
 const LEADERBOARD_DATA = {
@@ -1267,7 +1268,27 @@ export default function App() {
 
   const [selectedCard, setSelectedCard] = useState(null);
 
-  const [detailSubView, setDetailSubView] = useState(null); 
+  const [detailSubView, setDetailSubView] = useState(null);
+  
+  // 使用 ref 保存进入 SettledDetailPage 之前的状态
+  const previousStateRef = useRef(null);
+  
+  // 监听 selectedCard 变化，当它变成一个已结算的卡片时，保存之前的状态
+  useEffect(() => {
+    if (selectedCard && selectedCard.status === 'closed') {
+      // 如果还没有保存状态，保存当前的状态（除了 selectedCard，因为它已经是新的卡片了）
+      if (!previousStateRef.current) {
+        previousStateRef.current = {
+          detailSubView: detailSubView,
+          activeTab: activeTab,
+          // 注意：我们不保存 selectedCard，因为它是新的已结算卡片
+        };
+      }
+    } else if (!selectedCard || (selectedCard && selectedCard.status !== 'closed')) {
+      // 当离开 SettledDetailPage 时，清除保存的状态
+      previousStateRef.current = null;
+    }
+  }, [selectedCard, detailSubView, activeTab]);
 
   const [userPrediction, setUserPrediction] = useState(null);
 
@@ -1305,10 +1326,22 @@ export default function App() {
     // 0.1. User Profile View (can be shown from any tab)
     if (detailSubView && detailSubView.startsWith('user_profile_')) {
       const userId = detailSubView.replace('user_profile_', '');
+      // 检查是否从 Trend tab 跳转过来的
+      const trendContextMatch = detailSubView.match(/trend_(\w+)_user_/);
+      const trendContext = trendContextMatch ? trendContextMatch[1] : null;
+      
       return (
         <UserProfileView 
           userId={userId} 
-          onBack={() => setDetailSubView(null)}
+          onBack={() => {
+            // 如果是从 Trend tab 跳转过来的，返回到对应的 tab
+            if (trendContext) {
+              setDetailSubView(`trend_${trendContext}`);
+              setActiveTab('trend');
+            } else {
+              setDetailSubView(null);
+            }
+          }}
           onNavigate={(view) => setDetailSubView(view)}
         />
       );
@@ -1352,6 +1385,43 @@ export default function App() {
 
         return <OpportunitiesListView onBack={() => setDetailSubView(null)} opportunities={opportunities} />;
 
+      }
+
+      if (detailSubView?.startsWith('trend_') && detailSubView.includes('_opportunities')) {
+        // 从 Trend tab 跳转过来的，提取 tab 信息
+        const trendTab = detailSubView.split('trend_')[1]?.split('_')[0] || 'influence';
+        return (
+          <OpportunitiesListView 
+            onBack={() => {
+              // 返回到对应的 Trend tab
+              setDetailSubView(`trend_${trendTab}`);
+              setActiveTab('trend');
+            }} 
+            opportunities={opportunities} 
+          />
+        );
+      }
+
+      if (detailSubView === 'opportunities_from_trend') {
+        // 从 Trend tab 跳转过来的，保存 tab 信息
+        const trendContext = detailSubView.includes('_trend_') 
+          ? detailSubView.split('_trend_')[1]?.split('_opportunities')[0]
+          : null;
+        
+        return (
+          <OpportunitiesListView 
+            onBack={() => {
+              // 如果是从 Trend tab 跳转过来的，返回到对应的 tab
+              if (trendContext) {
+                setDetailSubView(`trend_${trendContext}`);
+                setActiveTab('trend');
+              } else {
+                setDetailSubView(null);
+              }
+            }} 
+            opportunities={opportunities} 
+          />
+        );
       }
 
       if (detailSubView === 'aiChat') {
@@ -1409,7 +1479,6 @@ export default function App() {
       }
 
       if (selectedCard.status === 'closed') {
-
          return (
 
            <SettledDetailPage 
@@ -1417,8 +1486,18 @@ export default function App() {
              data={selectedCard}
 
              onBack={() => {
-               setSelectedCard(null);
-               setDetailSubView(null);
+               // 返回到上一步：如果有保存的状态，恢复它；否则返回到 Signal 页面
+               if (previousStateRef.current) {
+                 const prevState = previousStateRef.current;
+                 setDetailSubView(prevState.detailSubView);
+                 setActiveTab(prevState.activeTab);
+                 setSelectedCard(null); // 清除已结算的卡片
+                 previousStateRef.current = null; // 清除保存的状态
+               } else {
+                 // 没有保存的状态，返回到 Signal 页面
+                 setSelectedCard(null);
+                 setDetailSubView(null);
+               }
              }} 
 
            />
@@ -1434,8 +1513,18 @@ export default function App() {
           data={selectedCard} 
 
           onBack={() => {
-            setSelectedCard(null);
-            setDetailSubView(null);
+            // 检查是否从 Trend tab 跳转过来的
+            if (detailSubView?.startsWith('trend_')) {
+              // 提取 tab 信息
+              const parts = detailSubView.split('trend_')[1]?.split('_') || [];
+              const trendTab = parts[0] || 'influence';
+              setSelectedCard(null);
+              setDetailSubView(`trend_${trendTab}`);
+              setActiveTab('trend');
+            } else {
+              setSelectedCard(null);
+              setDetailSubView(null);
+            }
           }} 
 
           setSubView={setDetailSubView}
@@ -1452,7 +1541,7 @@ export default function App() {
 
           }}
 
-          initialTab={detailSubView === 'opportunities_from_trend' ? 'Opportunities' : 'Question'}
+          initialTab={detailSubView?.includes('_opportunities') ? 'Opportunities' : 'Question'}
 
         />
 
@@ -1464,7 +1553,79 @@ export default function App() {
 
     if (activeTab === 'me') {
 
-      if (detailSubView === 'ai_insight') {
+      if (detailSubView === 'ai_insight' || detailSubView === 'ai_analyst') {
+        // 计算用户预测分析数据（与MyGrowthView中的逻辑一致）
+        const allPredictions = HISTORICAL_RECORDS.predictions || [];
+        const totalPredictions = Math.max(allPredictions.length, 30);
+        const settledPredictions = allPredictions.filter(p => p.status === 'closed' && p.isPredicted);
+        const correctCount = settledPredictions.filter(p => p.prediction === p.outcome).length;
+        const averageAccuracy = settledPredictions.length > 0 
+          ? (correctCount / settledPredictions.length) * 100 
+          : 0;
+        
+        // 将简单分类映射到更细分的分类
+        const categoryMapping = {
+          'Space': 'Space & Aerospace',
+          'Tech': 'AI & Technology',
+          'Business': 'Stocks & Indexes',
+          'Politics': 'Conflict & Security',
+          'Geopolitics': 'Conflict & Security',
+          'Other': 'Other'
+        };
+        
+        const titleToCategory = {};
+        (MOCK_CARDS || []).forEach(card => {
+          if (card.question) {
+            const baseCategory = card.category || 'Other';
+            titleToCategory[card.question] = categoryMapping[baseCategory] || baseCategory;
+          }
+        });
+        
+        const categoryStats = {};
+        settledPredictions.forEach(p => {
+          const category = titleToCategory[p.title] || p.category || 'Other';
+          if (!categoryStats[category]) {
+            categoryStats[category] = { total: 0, correct: 0 };
+          }
+          categoryStats[category].total++;
+          if (p.prediction === p.outcome) {
+            categoryStats[category].correct++;
+          }
+        });
+        
+        const categoryAccuracies = Object.entries(categoryStats).map(([category, stats]) => ({
+          category,
+          total: stats.total,
+          correct: stats.correct,
+          accuracy: stats.total > 0 ? (stats.correct / stats.total) * 100 : 0
+        }));
+        
+        const strengths = categoryAccuracies
+          .filter(cat => cat.total >= 5 && cat.accuracy > averageAccuracy + 10)
+          .sort((a, b) => b.accuracy - a.accuracy);
+        const strength = strengths.length > 0 ? strengths[0] : null;
+        const topByVolume = categoryAccuracies.length > 0
+          ? categoryAccuracies.sort((a, b) => b.total - a.total)[0]
+          : null;
+        const finalStrength = strength || topByVolume;
+        
+        const blindSpots = categoryAccuracies
+          .filter(cat => cat.total >= 5 && cat.accuracy < averageAccuracy - 10)
+          .sort((a, b) => a.accuracy - b.accuracy);
+        const blindSpot = blindSpots.length > 0 ? blindSpots[0] : null;
+        
+        const allCategories = ['AI & Technology', 'Stocks & Indexes', 'Conflict & Security', 'Space & Aerospace', 'Crypto & Blockchain', 'Energy & Commodities'];
+        const userCategories = new Set(categoryAccuracies.map(c => c.category));
+        const recommendedCategory = allCategories.find(cat => !userCategories.has(cat)) || 
+          categoryAccuracies.sort((a, b) => a.total - b.total)[0]?.category || 'AI & Technology';
+        
+        const userPredictionAnalysis = {
+          totalPredictions,
+          settledCount: settledPredictions.length,
+          averageAccuracy,
+          strength: finalStrength,
+          blindSpot: blindSpot || { category: recommendedCategory, total: 0, accuracy: 0, isRecommended: true }
+        };
 
         return (
 
@@ -1472,13 +1633,22 @@ export default function App() {
 
             onBack={() => setDetailSubView(null)} 
 
-            questionTitle="Personal Growth Analysis"
+            questionTitle="AI Analyst"
 
-            initialContext={`Based on the user's data:\n- Accuracy: ${USER_STATS.accuracy}%\n- Top Domain: ${USER_STATS.topDomain}\n- Bias Tendency: Overconfident in Politics\n\nProvide a deep analysis of their betting behavior, point out blind spots (like ignored economic drivers), and suggest exclusive opportunities in Space Tech.`}
+            initialContext=""
+
+            isAIInsight={detailSubView === 'ai_insight'}
+
+            isAIAnalyst={detailSubView === 'ai_analyst'}
+
+            userPredictionAnalysis={userPredictionAnalysis}
 
             onAddDriverFromAI={() => {}}
 
-            isAIInsight={true}
+            onPredictionClick={(prediction) => {
+              setDetailSubView(null);
+              setSelectedCard(prediction);
+            }}
 
           />
 
@@ -1611,20 +1781,86 @@ export default function App() {
         );
 
       case 'trend':
-
+        // 从 detailSubView 中提取 tab 信息（如果有的话）
+        let trendTabFromSubView = 'influence';
+        if (detailSubView?.startsWith('trend_')) {
+          const parts = detailSubView.replace('trend_', '').split('_');
+          trendTabFromSubView = parts[0] || 'influence';
+        }
+        
+        // 处理投资机会详情页
+        if (detailSubView?.includes('_asset_opportunity_')) {
+          const assetIdMatch = detailSubView.match(/_asset_opportunity_(\d+)/);
+          if (assetIdMatch) {
+            const assetId = parseInt(assetIdMatch[1]);
+            return (
+              <AssetOpportunityDetailPage
+                assetId={assetId}
+                onBack={() => {
+                  // 返回到 Trend 页面的 Momentum tab
+                  setDetailSubView(`trend_${trendTabFromSubView}`);
+                }}
+                onPredictionClick={(prediction) => {
+                  // 保存当前 tab 状态
+                  const currentTrendTab = trendTabFromSubView;
+                  setDetailSubView(`trend_${currentTrendTab}_prediction_${prediction.id}`);
+                  setSelectedCard(prediction);
+                  setTimeout(() => {
+                    setDetailSubView(null);
+                  }, 0);
+                }}
+              />
+            );
+          }
+        }
+        
         return (
           <TrendView 
+            initialTab={trendTabFromSubView}
+            onBack={() => {
+              // 如果是从其他页面返回的，清除 detailSubView
+              if (detailSubView?.startsWith('trend_')) {
+                setDetailSubView(null);
+              }
+            }}
             onUserClick={(userId) => {
-              // 跳转到用户主页（暂时使用GenericListView作为占位）
-              setDetailSubView(`user_profile_${userId}`);
+              // 保存当前 tab 状态并跳转到用户主页
+              const currentTrendTab = trendTabFromSubView;
+              setDetailSubView(`trend_${currentTrendTab}_user_${userId}`);
+              setTimeout(() => {
+                setDetailSubView(`user_profile_trend_${currentTrendTab}_user_${userId}`);
+              }, 0);
             }}
             onMomentumClick={(predictionId, momentumId) => {
-              // 找到对应的预测卡片并跳转到Opportunities tab
+              // 保存当前 tab 状态
+              const currentTrendTab = trendTabFromSubView;
+              
+              // 检查是否是投资机会详情页
+              if (typeof predictionId === 'string' && predictionId.startsWith('asset_opportunity_')) {
+                const assetId = predictionId.replace('asset_opportunity_', '');
+                setDetailSubView(`trend_${currentTrendTab}_asset_opportunity_${assetId}`);
+                return;
+              }
+              
+              // 原有的逻辑：跳转到Opportunities tab
+              setDetailSubView(`trend_${currentTrendTab}_momentum_${predictionId}`);
               const card = MOCK_CARDS.find(c => c.id === predictionId);
               if (card) {
                 setSelectedCard(card);
-                setDetailSubView('opportunities_from_trend');
+                setTimeout(() => {
+                  setDetailSubView(`trend_${currentTrendTab}_opportunities`);
+                }, 0);
               }
+            }}
+            onPredictionClick={(card) => {
+              // 保存当前 tab 状态
+              const currentTrendTab = trendTabFromSubView;
+              setDetailSubView(`trend_${currentTrendTab}_prediction_${card.id}`);
+              // 点击预测题标题，跳转到预测题详情页
+              setSelectedCard(card);
+              setTimeout(() => {
+                setDetailSubView(null);
+              }, 0);
             }}
           />
         );
