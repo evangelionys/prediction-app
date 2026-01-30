@@ -131,6 +131,12 @@ import FollowedView from './components/FollowedView';
 import SearchView from './components/SearchView';
 import ActivitiesListView from './components/ActivitiesListView';
 import FollowersFollowingListView from './components/FollowersFollowingListView';
+import OpportunityDetailPage from './components/OpportunityDetailPage';
+import ReasoningPathView from './components/ReasoningPathView';
+import DecisionSandboxView from './components/DecisionSandboxView';
+import { DECISION_SANDBOX_OPPORTUNITIES } from './components/DecisionSandboxView';
+import DifferenceDetailView from './components/DifferenceDetailView';
+import DifferencesListView from './components/DifferencesListView';
 
 // Version configuration - 可以切换 'basic-1222' 或 'cognition-1222'
 const ME_VIEW_VERSION = 'cognition-1222'; // 切换到 'basic-1222' 使用基础版本
@@ -1295,6 +1301,144 @@ export default function App() {
   const [drivers, setDrivers] = useState(MOCK_DRIVERS);
 
   const [opportunities, setOpportunities] = useState(MOCK_OPPORTUNITIES);
+  
+  // Store additional outcomes for opportunities (user-created)
+  const [opportunityOutcomes, setOpportunityOutcomes] = useState({});
+  // Store user saved paths: { opportunityId_scenarioId: { modifiedSteps, modifiedResult, isPrivate } }
+  const [userSavedPaths, setUserSavedPaths] = useState({});
+  // Store comparison data for AI Analyst
+  const [comparisonData, setComparisonData] = useState(null);
+
+  // Helper function to get AI prediction (mock for now)
+  const getAIPrediction = (predictionId) => {
+    // Mock AI predictions - in real app, this would come from API
+    const mockAIPredictions = {
+      1: { prediction: "Yes", confidence: 75 },
+      2: { prediction: "Yes", confidence: 68 },
+      3: { prediction: "No", confidence: 82 },
+      4: { prediction: "Yes", confidence: 71 },
+      5: { prediction: "No", confidence: 65 }
+    };
+    return mockAIPredictions[predictionId] || { prediction: "Yes", confidence: 50 };
+  };
+
+  // Helper function to calculate alignment score (0-100)
+  // User option == AI top option → aligned (100), different → divergent (0)
+  const calculateAlignmentScore = (userPred, aiPred) => {
+    if (userPred === aiPred) return 100;
+    return 0; // Different options = not aligned
+  };
+
+  // Helper function to calculate difference score (for display)
+  const calculateDifference = (userPred, aiPred) => {
+    if (userPred === aiPred) return 0;
+    return 50; // Default difference score for display
+  };
+
+  // Helper function to get AI default reasoning path
+  const getAIDefaultPath = (opportunity, scenario) => {
+    // AI's default path is the scenario's original reasoning steps and first outcome
+    return {
+      steps: scenario?.reasoningSteps || [],
+      result: scenario?.outcomes?.[0] || "No result available"
+    };
+  };
+
+  // Helper function to calculate Jaccard similarity (overlap ratio)
+  const calculateJaccardSimilarity = (set1, set2) => {
+    const intersection = new Set([...set1].filter(x => set2.has(x)));
+    const union = new Set([...set1, ...set2]);
+    return union.size === 0 ? 0 : (intersection.size / union.size) * 100;
+  };
+
+  // Helper function to compare reasoning paths and calculate alignment
+  const comparePaths = (userPath, aiPath) => {
+    const differences = [];
+    
+    // Compare steps - extract drivers/keys from steps
+    const userStepKeys = userPath.modifiedSteps ? Object.keys(userPath.modifiedSteps) : [];
+    const aiStepKeys = aiPath.steps ? aiPath.steps.map((_, idx) => idx.toString()) : [];
+    
+    // Calculate alignment based on shared drivers/steps (Jaccard similarity)
+    const userStepSet = new Set(userStepKeys);
+    const aiStepSet = new Set(aiStepKeys);
+    const alignmentScore = calculateJaccardSimilarity(userStepSet, aiStepSet);
+    
+    // Compare steps
+    if (userPath.modifiedSteps && Object.keys(userPath.modifiedSteps).length > 0) {
+      differences.push("User modified reasoning steps");
+    }
+    
+    // Compare results
+    if (userPath.modifiedResult && userPath.modifiedResult !== aiPath.result) {
+      differences.push("Different final conclusions");
+    }
+    
+    return { differences, alignmentScore };
+  };
+
+  // Function to compute comparison data
+  const computeComparisonData = React.useCallback(() => {
+    // 1. Compare predictions
+    const settledPredictions = (HISTORICAL_RECORDS.predictions || [])
+      .filter(p => p.status === 'closed' && p.isPredicted);
+    
+    const predictionDiffs = settledPredictions.map(prediction => {
+      const aiPrediction = getAIPrediction(prediction.id);
+      const alignmentScore = calculateAlignmentScore(prediction.prediction, aiPrediction.prediction);
+      
+      return {
+        id: prediction.id,
+        title: prediction.title,
+        category: prediction.category || 'Other',
+        userPrediction: prediction.prediction,
+        userConfidence: prediction.confidence || 50,
+        aiPrediction: aiPrediction.prediction,
+        aiConfidence: aiPrediction.confidence,
+        differenceScore: calculateDifference(prediction.prediction, aiPrediction.prediction),
+        alignmentScore: alignmentScore,
+        isAgreement: prediction.prediction === aiPrediction.prediction
+      };
+    });
+
+    // 2. Compare reasoning paths
+    const reasoningDiffs = Object.entries(userSavedPaths).map(([key, userPath]) => {
+      const [opportunityId, scenarioId] = key.split('_');
+      const opportunity = DECISION_SANDBOX_OPPORTUNITIES.find(o => o.id === parseInt(opportunityId));
+      const scenario = opportunity?.scenarios.find(s => s.id === scenarioId);
+      
+      if (!opportunity || !scenario) return null;
+      
+      const aiPath = getAIDefaultPath(opportunity, scenario);
+      const pathComparison = comparePaths(userPath, aiPath);
+      
+      return {
+        key,
+        opportunityId: parseInt(opportunityId),
+        scenarioId,
+        opportunityTitle: opportunity.question,
+        scenarioTitle: scenario.title,
+        userPath: {
+          steps: userPath.modifiedSteps || {},
+          result: userPath.modifiedResult || scenario.outcomes[0]
+        },
+        aiPath: {
+          steps: aiPath.steps,
+          result: aiPath.result
+        },
+        differences: pathComparison.differences,
+        alignmentScore: pathComparison.alignmentScore
+      };
+    }).filter(Boolean);
+
+    return { predictionDiffs, reasoningDiffs };
+  }, [userSavedPaths]);
+
+  // Compute comparison data when dependencies change
+  useEffect(() => {
+    const data = computeComparisonData();
+    setComparisonData(data);
+  }, [computeComparisonData]);
 
   // Helper to handle navigation within Me tab
 
@@ -1345,6 +1489,159 @@ export default function App() {
           onNavigate={(view) => setDetailSubView(view)}
         />
       );
+    }
+
+    // 0.2. Decision Sandbox - Opportunity Detail (can be shown without selectedCard)
+    if (detailSubView && detailSubView.startsWith('opportunity_')) {
+      const parts = detailSubView.split('_');
+      const opportunityId = parseInt(parts[1]);
+      const shouldShowOutcomes = parts.length > 2 && parts[2] === 'outcomes';
+      
+      return (
+        <OpportunityDetailPage
+          opportunityId={opportunityId}
+          initialTab={shouldShowOutcomes ? 'outcomes' : 'simulate'}
+          additionalOutcomes={opportunityOutcomes[opportunityId] || []}
+          onBack={() => {
+            setDetailSubView(null);
+          }}
+          onScenarioClick={(opportunity, scenario, outcome) => {
+            if (outcome) {
+              // Navigate to outcome's reasoning path
+              setDetailSubView(`reasoning_${opportunity.id}_outcome_${outcome.id}`);
+            } else {
+              // Navigate to scenario's reasoning path
+              setDetailSubView(`reasoning_${opportunity.id}_scenario_${scenario.id}`);
+            }
+          }}
+          onSaveOutcome={(newOutcome, isPrivate) => {
+            // Add new outcome to the opportunity's outcomes
+            setOpportunityOutcomes(prev => ({
+              ...prev,
+              [opportunityId]: [...(prev[opportunityId] || []), newOutcome]
+            }));
+            // Navigate to outcomes tab
+            setDetailSubView(`opportunity_${opportunityId}_outcomes`);
+          }}
+        />
+      );
+    }
+
+    // 0.3. Decision Sandbox - Reasoning Path (can be shown without selectedCard)
+    if (detailSubView && detailSubView.startsWith('reasoning_')) {
+      const match = detailSubView.match(/reasoning_(\d+)_(scenario_([A-Za-z0-9]+)|outcome_(\d+))/);
+      if (match) {
+        const opportunityId = parseInt(match[1]);
+        const scenarioId = match[3] || null;
+        const outcomeId = match[4] ? parseInt(match[4]) : null;
+        
+        const opportunity = DECISION_SANDBOX_OPPORTUNITIES.find(o => o.id === opportunityId);
+        if (!opportunity) {
+          return (
+            <div className="flex flex-col h-full bg-gray-50">
+              <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md p-4 flex items-center gap-4 border-b border-gray-200">
+                <button onClick={() => setDetailSubView(null)} className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-slate-600">
+                  <ChevronLeft size={24} />
+                </button>
+                <span className="font-semibold text-slate-900">Reasoning Path</span>
+              </div>
+              <div className="flex-1 flex items-center justify-center p-4">
+                <p className="text-slate-600">Opportunity not found</p>
+              </div>
+            </div>
+          );
+        }
+        
+        const scenario = scenarioId ? opportunity.scenarios.find(s => s.id === scenarioId) : null;
+        // For outcomes, check both original outcomes and additional outcomes
+        let outcome = null;
+        if (outcomeId) {
+          outcome = opportunity.outcomes.find(o => o.id === outcomeId);
+          if (!outcome && opportunityOutcomes[opportunityId]) {
+            outcome = opportunityOutcomes[opportunityId].find(o => o.id === outcomeId);
+          }
+        }
+        
+        // If scenario is not found, show error message
+        if (scenarioId && !scenario) {
+          return (
+            <div className="flex flex-col h-full bg-gray-50">
+              <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md p-4 flex items-center gap-4 border-b border-gray-200">
+                <button onClick={() => setDetailSubView(`opportunity_${opportunityId}`)} className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-slate-600">
+                  <ChevronLeft size={24} />
+                </button>
+                <span className="font-semibold text-slate-900">Reasoning Path</span>
+              </div>
+              <div className="flex-1 flex items-center justify-center p-4">
+                <p className="text-slate-600">Scenario not found</p>
+              </div>
+            </div>
+          );
+        }
+        
+        // Check if user has a saved path for this scenario
+        // Use scenarioId from match, or get it from scenario/outcome if not available
+        const finalScenarioId = scenarioId || scenario?.id || (outcome ? outcome.scenario.split(' ')[1] : null);
+        const pathKey = finalScenarioId ? `${opportunityId}_${finalScenarioId}` : null;
+        const savedPath = pathKey ? userSavedPaths[pathKey] : null;
+        
+        return (
+          <ReasoningPathView
+            opportunity={opportunity}
+            scenario={scenario}
+            outcome={outcome}
+            savedPath={savedPath}
+            onBack={() => {
+              setDetailSubView(`opportunity_${opportunityId}`);
+            }}
+            onNewsClick={(newsCard) => {
+              setSelectedCard(newsCard);
+              setDetailSubView('news');
+            }}
+            onSave={(newOutcome, isPrivate) => {
+              // Add new outcome to the opportunity's outcomes
+              setOpportunityOutcomes(prev => ({
+                ...prev,
+                [opportunityId]: [...(prev[opportunityId] || []), newOutcome]
+              }));
+              
+              // Save the path for this scenario (reuse finalScenarioId from outer scope)
+              if (finalScenarioId && newOutcome.modifiedSteps !== undefined) {
+                const savePathKey = `${opportunityId}_${finalScenarioId}`;
+                setUserSavedPaths(prev => ({
+                  ...prev,
+                  [savePathKey]: {
+                    modifiedSteps: newOutcome.modifiedSteps || {},
+                    modifiedResult: newOutcome.modifiedResult || null,
+                    isPrivate: isPrivate,
+                    creator: newOutcome.creator || 'You',
+                    creatorAvatar: newOutcome.creatorAvatar || 'AT',
+                    creatorName: newOutcome.creatorName || 'Alex Thinker',
+                    updatedAt: newOutcome.updatedAt || newOutcome.createdAt || new Date().toISOString()
+                  }
+                }));
+              }
+              
+              // Do not navigate - stay on current page
+            }}
+          />
+        );
+      } else {
+        // If regex doesn't match, show error
+        return (
+          <div className="flex flex-col h-full bg-gray-50">
+            <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md p-4 flex items-center gap-4 border-b border-gray-200">
+              <button onClick={() => setDetailSubView(null)} className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-slate-600">
+                <ChevronLeft size={24} />
+              </button>
+              <span className="font-semibold text-slate-900">Reasoning Path</span>
+            </div>
+            <div className="flex-1 flex items-center justify-center p-4">
+              <p className="text-slate-600">Invalid path format</p>
+            </div>
+          </div>
+        );
+      }
     }
 
     // 1. Prediction Card Details Flow
@@ -1478,6 +1775,7 @@ export default function App() {
 
       }
 
+
       if (selectedCard.status === 'closed') {
          return (
 
@@ -1553,7 +1851,98 @@ export default function App() {
 
     if (activeTab === 'me') {
 
-      if (detailSubView === 'ai_insight' || detailSubView === 'ai_analyst') {
+      // Handle AI Analyst differences list view (must be first)
+      if (detailSubView === 'ai_analyst') {
+        console.log('Rendering DifferencesListView, comparisonData:', comparisonData);
+        return (
+          <DifferencesListView
+            comparisonData={comparisonData}
+            onBack={() => {
+              console.log('Navigating back from DifferencesListView');
+              setDetailSubView(null);
+            }}
+            onCategoryClick={(category) => {
+              console.log('Category clicked:', category);
+              const newView = `ai_analyst_category_${category.replace(/\s+/g, '_')}`;
+              console.log('Setting detailSubView to:', newView);
+              setDetailSubView(newView);
+            }}
+            onReasoningClick={() => {
+              console.log('Reasoning clicked');
+              setDetailSubView('ai_analyst_reasoning');
+            }}
+          />
+        );
+      }
+
+      // Handle AI Analyst category detail view (must be before ai_insight check)
+      if (detailSubView && detailSubView.startsWith('ai_analyst_category_')) {
+        const category = detailSubView.replace('ai_analyst_category_', '').replace(/_/g, ' ');
+        const { predictionDiffs = [] } = comparisonData || {};
+        let categoryDifferences = predictionDiffs.filter(d => 
+          (d.category || 'Other').replace(/_/g, ' ') === category
+        );
+
+        // 如果真实数据不足，添加假数据
+        if (categoryDifferences.length === 0) {
+          const mockDifferences = {
+            'Stocks & Indexes': [
+              { id: 1, title: 'Will the S&P 500 reach 6000 by end of 2025?', userPrediction: 'Yes', aiPrediction: 'No', userConfidence: 75, aiConfidence: 68, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'Stocks & Indexes' },
+              { id: 2, title: 'Will Fed cut rates in Q2 2025?', userPrediction: 'No', aiPrediction: 'Yes', userConfidence: 65, aiConfidence: 72, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'Stocks & Indexes' }
+            ],
+            'AI & Technology': [
+              { id: 3, title: 'Will GPT-6 ship by 2026?', userPrediction: 'Incremental GPT-5.x evolution', aiPrediction: 'Major architecture leap before 2026', userConfidence: 60, aiConfidence: 80, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'AI & Technology' },
+              { id: 4, title: 'Will Apple release AR glasses in 2025?', userPrediction: 'Yes', aiPrediction: 'No', userConfidence: 70, aiConfidence: 55, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'AI & Technology' },
+              { id: 5, title: 'Will quantum computing achieve commercial viability by 2026?', userPrediction: 'No', aiPrediction: 'Yes', userConfidence: 65, aiConfidence: 75, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'AI & Technology' }
+            ],
+            'Energy & Infra': [
+              { id: 6, title: 'Will oil prices exceed $100/barrel in 2025?', userPrediction: 'Yes', aiPrediction: 'No', userConfidence: 68, aiConfidence: 58, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'Energy & Infra' },
+              { id: 7, title: 'Will renewable energy exceed 50% of US grid by 2026?', userPrediction: 'No', aiPrediction: 'Yes', userConfidence: 55, aiConfidence: 70, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'Energy & Infra' }
+            ],
+            'Other': [
+              { id: 8, title: 'Will global population reach 8.5B by 2030?', userPrediction: 'Yes', aiPrediction: 'No', userConfidence: 70, aiConfidence: 60, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'Other' }
+            ]
+          };
+          categoryDifferences = mockDifferences[category] || [];
+        }
+
+        return (
+          <DifferenceDetailView
+            category={category}
+            type="predictions"
+            differences={categoryDifferences}
+            onBack={() => setDetailSubView('ai_analyst')}
+            onUpdatePrediction={(diff) => {
+              console.log('Update prediction:', diff);
+            }}
+            onAnalyzeDifference={(diff) => {
+              console.log('Analyze difference:', diff);
+            }}
+          />
+        );
+      }
+
+      // Handle AI Analyst reasoning differences view
+      if (detailSubView === 'ai_analyst_reasoning') {
+        const { reasoningDiffs = [] } = comparisonData || {};
+        const differences = reasoningDiffs.filter(d => d.differences && d.differences.length > 0);
+
+        return (
+          <DifferenceDetailView
+            type="reasoning"
+            differences={differences}
+            onBack={() => setDetailSubView('ai_analyst')}
+            onUpdatePrediction={(diff) => {
+              console.log('Update reasoning path:', diff);
+            }}
+            onAnalyzeDifference={(diff) => {
+              console.log('Analyze reasoning difference:', diff);
+            }}
+          />
+        );
+      }
+
+      if (detailSubView === 'ai_insight') {
         // 计算用户预测分析数据（与MyGrowthView中的逻辑一致）
         const allPredictions = HISTORICAL_RECORDS.predictions || [];
         const totalPredictions = Math.max(allPredictions.length, 30);
@@ -1728,7 +2117,7 @@ export default function App() {
         ? MyGrowthViewCognition 
         : MyGrowthViewBasic;
       
-      return <MyGrowthView onNavigate={handleMeNavigation} />;
+      return <MyGrowthView onNavigate={handleMeNavigation} comparisonData={comparisonData} />;
 
     }
 
@@ -1764,6 +2153,20 @@ export default function App() {
 
           />
 
+        );
+
+      case 'whatifs':
+
+        return (
+          <DecisionSandboxView 
+            onOpportunityClick={(opportunity) => {
+              console.log('App.jsx: onOpportunityClick received', opportunity);
+              const newView = `opportunity_${opportunity.id}`;
+              console.log('Setting detailSubView to:', newView);
+              setDetailSubView(newView);
+              console.log('detailSubView set, should render OpportunityDetailPage');
+            }}
+          />
         );
 
       case 'predict':
@@ -1909,7 +2312,7 @@ export default function App() {
 
       </main>
 
-      {!selectedCard && (
+      {!selectedCard && !(detailSubView && detailSubView.startsWith('reasoning_')) && (
 
         <nav className="bg-white border-t border-gray-200 h-20 px-6 flex justify-between items-center z-20 pb-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
 
@@ -1924,6 +2327,22 @@ export default function App() {
             <Signal size={24} />
 
             <span className="text-[10px] font-medium">Signal</span>
+
+          </button>
+
+          
+
+          <button 
+
+            onClick={() => { setActiveTab('whatifs'); setDetailSubView(null); }}
+
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'whatifs' ? 'text-black' : 'text-slate-400 hover:text-slate-600'}`}
+
+          >
+
+            <BrainCircuit size={24} />
+
+            <span className="text-[10px] font-medium">What-Ifs</span>
 
           </button>
 

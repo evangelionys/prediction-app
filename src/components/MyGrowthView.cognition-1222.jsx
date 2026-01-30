@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Edit3, Share2, Bell, ArrowRight, Sparkles, Clock, Lightbulb, Target, Bot, MessageSquare, BrainCircuit, Zap, X, CheckCircle2, Plus, RefreshCw, Lock } from 'lucide-react';
 import { USER_PROFILE, USER_METRICS, USER_STATS, COGNITION_TREND_DATA, COGNITIVE_DIMENSIONS, HISTORICAL_RECORDS, MOCK_CARDS } from '../App';
 import EditProfileModal from './EditProfileModal';
+import AIAnalystCard from './AIAnalystCard';
 
 // 认知雷达图组件
 const CognitiveRadarChart = ({ onPointClick }) => {
@@ -544,7 +545,7 @@ const DetailOverlay = ({ dimension, onClose }) => {
   );
 };
 
-const MyGrowthView = ({ onNavigate }) => {
+const MyGrowthView = ({ onNavigate, comparisonData = null }) => {
   const [selectedDimension, setSelectedDimension] = useState(null);
   const [activeActivityTab, setActiveActivityTab] = useState('prediction');
   const [activePredictionFilter, setActivePredictionFilter] = useState('predicted');
@@ -710,16 +711,14 @@ const MyGrowthView = ({ onNavigate }) => {
     };
   }, []);
   
+  // Use AIAnalystCard instead of InsightCard
   const InsightCard = () => {
     const isLocked = predictionAnalysis.totalPredictions < 30;
     const daysSinceUpdate = Math.floor((Date.now() - lastUpdateTime) / (24 * 60 * 60 * 1000));
-    const canUpdate = daysSinceUpdate >= 7;
     
-    const handleUpdate = (e) => {
-      e.stopPropagation();
-      if (!canUpdate || isUpdating) return;
+    const handleUpdate = () => {
+      if (isUpdating) return;
       setIsUpdating(true);
-      // 模拟更新过程
       setTimeout(() => {
         setLastUpdateTime(Date.now());
         localStorage.setItem('aiInsightLastUpdate', Date.now().toString());
@@ -727,116 +726,16 @@ const MyGrowthView = ({ onNavigate }) => {
       }, 1000);
     };
     
-    const handleDeepAnalysis = (e) => {
-      e.stopPropagation();
-      onNavigate('ai_analyst');
-    };
-    
     return (
-      <div className={`mx-4 mb-8 bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-lg relative border transition-all ${
-        isLocked 
-          ? 'border-gray-200/50 opacity-60' 
-          : 'border-cyan-200/50 hover:shadow-xl hover:border-cyan-300 hover-glow cursor-pointer'
-      }`} onClick={!isLocked ? handleDeepAnalysis : undefined}>
-        <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 grid-background opacity-20" />
-          <div className="absolute top-0 right-0 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl" />
-          {!isLocked && (
-            <>
-              <div className="absolute -right-8 -bottom-8 p-4 transform rotate-12 opacity-5">
-                <Bot size={180} className="text-cyan-600" />
-              </div>
-              <div className="scan-line absolute inset-0" />
-            </>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-50/40 via-transparent to-blue-50/30" />
-        </div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Sparkles size={14} className={isLocked ? 'text-gray-400' : 'text-cyan-600'} />
-              <h3 className={`text-sm font-bold text-slate-900 ${isLocked ? 'opacity-60' : ''}`}>AI Insight</h3>
-            </div>
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border font-mono text-[11px] transition-all ${
-              isLocked
-                ? 'text-gray-400 bg-gray-50/50 border-gray-200/50'
-                : 'text-cyan-500/70 bg-cyan-50/50 border-cyan-200/50 hover:bg-cyan-50/70 hover:border-cyan-200/70'
-            }`}>
-              {!isLocked && (
-                <button
-                  onClick={handleUpdate}
-                  disabled={!canUpdate || isUpdating}
-                  className={`p-0.5 rounded transition-all ${
-                    canUpdate && !isUpdating
-                      ? 'text-cyan-500/70 hover:text-cyan-600 hover:bg-cyan-100/50 cursor-pointer'
-                      : 'text-gray-400 cursor-not-allowed'
-                  }`}
-                  title={canUpdate && !isUpdating ? 'Update analysis' : `Next update in ${7 - daysSinceUpdate} days`}
-                >
-                  <RefreshCw size={11} className={isUpdating ? 'animate-spin' : ''} />
-                </button>
-              )}
-              <span className={isLocked ? 'text-gray-400' : 'text-cyan-500/70'}>
-                {isLocked ? 'Locked' : daysSinceUpdate === 0 ? 'Updated Today' : `Updated ${daysSinceUpdate}d ago`}
-              </span>
-            </div>
-          </div>
-          
-          {isLocked ? (
-            <div className="text-center py-4">
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Unlock AI Analyst when you reach <span className="font-bold text-slate-900">30 predictions</span> to analyze your strengths and cognitive blind spots
-              </p>
-              <div className="mt-3 text-xs text-slate-500">
-                Progress: {predictionAnalysis.totalPredictions}/30
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-3">
-                {/* Combined Strength & Blind Spot */}
-                <div className="flex gap-3">
-                  <div className="mt-0.5 p-1.5 bg-cyan-100/50 rounded-lg border border-cyan-200/50 shrink-0 h-fit">
-                    <Lightbulb size={16} className="text-cyan-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm leading-relaxed text-slate-700 font-medium whitespace-normal break-words">
-                      {predictionAnalysis.strength && (
-                        <>
-                          You excel in <span className="text-emerald-600 font-bold">{predictionAnalysis.strength.category === 'Other' ? 'Stocks & Indexes' : predictionAnalysis.strength.category}</span>
-                          {predictionAnalysis.strength.total >= 5 && (
-                            <span className="text-emerald-600"> ({predictionAnalysis.strength.accuracy.toFixed(0)}% vs {predictionAnalysis.averageAccuracy.toFixed(0)}%)</span>
-                          )}
-                        </>
-                      )}
-                      {predictionAnalysis.blindSpot && (
-                        <>
-                          {predictionAnalysis.strength && ', '}
-                          {predictionAnalysis.blindSpot.isRecommended ? (
-                            <>but consider exploring <span className="text-rose-600 font-bold">{predictionAnalysis.blindSpot.category}</span> where you have fewer predictions</>
-                          ) : (
-                            <>but need improvement in <span className="text-rose-600 font-bold">{predictionAnalysis.blindSpot.category}</span>
-                              <span className="text-rose-600"> ({predictionAnalysis.blindSpot.accuracy.toFixed(0)}% vs {predictionAnalysis.averageAccuracy.toFixed(0)}%)</span>
-                            </>
-                          )}
-                        </>
-                      )}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div 
-                className="mt-4 flex items-center justify-end text-xs font-bold text-slate-500 group-hover:text-cyan-600 transition-colors gap-2 font-mono cursor-pointer"
-                onClick={handleDeepAnalysis}
-              >
-                Tap for Deep Analysis <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+      <AIAnalystCard
+        predictionAnalysis={predictionAnalysis}
+        onNavigate={onNavigate}
+        isLocked={isLocked}
+        lastUpdateTime={lastUpdateTime}
+        onUpdate={handleUpdate}
+        isUpdating={isUpdating}
+        comparisonData={comparisonData}
+      />
     );
   };
 
