@@ -131,12 +131,15 @@ import FollowedView from './components/FollowedView';
 import SearchView from './components/SearchView';
 import ActivitiesListView from './components/ActivitiesListView';
 import FollowersFollowingListView from './components/FollowersFollowingListView';
+import SettingsView from './components/SettingsView';
+import AccountSettingsView from './components/AccountSettingsView';
 import OpportunityDetailPage from './components/OpportunityDetailPage';
 import ReasoningPathView from './components/ReasoningPathView';
 import DecisionSandboxView from './components/DecisionSandboxView';
 import { DECISION_SANDBOX_OPPORTUNITIES } from './components/DecisionSandboxView';
 import DifferenceDetailView from './components/DifferenceDetailView';
 import DifferencesListView from './components/DifferencesListView';
+import DifferenceAnalysisView from './components/DifferenceAnalysisView';
 
 // Version configuration - 可以切换 'basic-1222' 或 'cognition-1222'
 const ME_VIEW_VERSION = 'cognition-1222'; // 切换到 'basic-1222' 使用基础版本
@@ -1861,15 +1864,85 @@ export default function App() {
               console.log('Navigating back from DifferencesListView');
               setDetailSubView(null);
             }}
-            onCategoryClick={(category) => {
-              console.log('Category clicked:', category);
-              const newView = `ai_analyst_category_${category.replace(/\s+/g, '_')}`;
-              console.log('Setting detailSubView to:', newView);
-              setDetailSubView(newView);
+            onCategoryClick={(categoryOrDiff) => {
+              // 如果传入的是字符串，说明是分类名
+              if (typeof categoryOrDiff === 'string') {
+                const newView = `ai_analyst_category_${categoryOrDiff.replace(/\s+/g, '_')}`;
+                setDetailSubView(newView);
+              } else {
+                // 如果传入的是对象，说明是差异对象，进入分析页
+                setDetailSubView(`ai_analyst_analysis_${categoryOrDiff.id}`);
+              }
             }}
             onReasoningClick={() => {
               console.log('Reasoning clicked');
               setDetailSubView('ai_analyst_reasoning');
+            }}
+          />
+        );
+      }
+
+      // Handle AI Analyst analysis view
+      if (detailSubView && detailSubView.startsWith('ai_analyst_analysis_')) {
+        const diffId = parseInt(detailSubView.replace('ai_analyst_analysis_', ''));
+        const { predictionDiffs = [] } = comparisonData || {};
+        
+        // 查找对应的差异对象
+        let difference = predictionDiffs.find(d => d.id === diffId);
+        
+        // 如果找不到，从假数据中查找
+        if (!difference) {
+          const allMockDiffs = [
+            { id: 1, title: 'Will the S&P 500 reach 7500 by end of 2026?', userPrediction: 'Yes', aiPrediction: 'No', userConfidence: 75, aiConfidence: 68, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'Stocks & Indexes' },
+            { id: 2, title: 'Will Fed cut rates in Q2 2025?', userPrediction: 'No', aiPrediction: 'Yes', userConfidence: 65, aiConfidence: 72, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'Stocks & Indexes' },
+            { id: 3, title: 'Will GPT-6 ship by 2026?', userPrediction: 'Incremental GPT-5.x evolution', aiPrediction: 'Major architecture leap before 2026', userConfidence: 60, aiConfidence: 80, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'AI & Technology' },
+            { id: 4, title: 'Will Apple release AR glasses in 2025?', userPrediction: 'Yes', aiPrediction: 'No', userConfidence: 70, aiConfidence: 55, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'AI & Technology' },
+            { id: 5, title: 'Will quantum computing achieve commercial viability by 2026?', userPrediction: 'No', aiPrediction: 'Yes', userConfidence: 65, aiConfidence: 75, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'AI & Technology' },
+            { id: 6, title: 'Will oil prices exceed $100/barrel in 2025?', userPrediction: 'Yes', aiPrediction: 'No', userConfidence: 68, aiConfidence: 58, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'Energy & Infra' },
+            { id: 7, title: 'Will renewable energy exceed 50% of US grid by 2026?', userPrediction: 'No', aiPrediction: 'Yes', userConfidence: 55, aiConfidence: 70, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'Energy & Infra' }
+          ];
+          difference = allMockDiffs.find(d => d.id === diffId);
+        }
+        
+        if (!difference) {
+          return (
+            <div className="flex flex-col h-full bg-gray-50">
+              <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md p-4 flex items-center gap-4 border-b border-gray-200">
+                <button onClick={() => setDetailSubView('ai_analyst')} className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-slate-600">
+                  <ChevronLeft size={24} />
+                </button>
+                <div className="flex-1">
+                  <h1 className="font-semibold text-slate-900">Not Found</h1>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        
+        return (
+          <DifferenceAnalysisView
+            difference={difference}
+            onBack={() => setDetailSubView('ai_analyst')}
+            onGoToDetail={(diff) => {
+              // 跳转到对应题目的详情页
+              console.log('Go to detail for:', diff);
+              if (diff?.id) {
+                // 尝试在 MOCK_CARDS 中找到对应题目
+                const targetCard = (MOCK_CARDS || []).find(
+                  (card) => card.id === diff.id || card.question === diff.title
+                );
+                
+                if (targetCard) {
+                  setSelectedCard(targetCard);
+                  // 切换到 Signal / 主预测流标签以复用现有详情页逻辑
+                  setActiveTab('signal');
+                  setDetailSubView(null);
+                  return;
+                }
+              }
+              
+              // 如果找不到对应卡片，先退回列表
+              setDetailSubView('ai_analyst');
             }}
           />
         );
@@ -1887,7 +1960,7 @@ export default function App() {
         if (categoryDifferences.length === 0) {
           const mockDifferences = {
             'Stocks & Indexes': [
-              { id: 1, title: 'Will the S&P 500 reach 6000 by end of 2025?', userPrediction: 'Yes', aiPrediction: 'No', userConfidence: 75, aiConfidence: 68, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'Stocks & Indexes' },
+              { id: 1, title: 'Will the S&P 500 reach 7500 by end of 2026?', userPrediction: 'Yes', aiPrediction: 'No', userConfidence: 75, aiConfidence: 68, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'Stocks & Indexes' },
               { id: 2, title: 'Will Fed cut rates in Q2 2025?', userPrediction: 'No', aiPrediction: 'Yes', userConfidence: 65, aiConfidence: 72, differenceScore: 50, alignmentScore: 0, isAgreement: false, category: 'Stocks & Indexes' }
             ],
             'AI & Technology': [
@@ -1925,7 +1998,45 @@ export default function App() {
       // Handle AI Analyst reasoning differences view
       if (detailSubView === 'ai_analyst_reasoning') {
         const { reasoningDiffs = [] } = comparisonData || {};
-        const differences = reasoningDiffs.filter(d => d.differences && d.differences.length > 0);
+        let differences = reasoningDiffs.filter(d => d.differences && d.differences.length > 0);
+
+        // 如果真实数据不足，添加假数据
+        if (differences.length === 0) {
+          differences = [
+            {
+              key: 'mock_1',
+              opportunityId: 1,
+              scenarioId: 'A',
+              opportunityTitle: 'Will compute costs drop 50% by 2026?',
+              scenarioTitle: 'Scenario A: Efficiency gains mostly compress costs',
+              userPath: {
+                steps: {},
+                result: 'Short term: markets fear compute becomes cheap, NVDA valuation becomes volatile, but orders are not meaningfully revised down. Long term: cost compression enables new AI applications, driving demand growth.'
+              },
+              aiPath: {
+                steps: [],
+                result: 'Short term: efficiency gains compress costs without reducing total compute demand. Long term: cost savings enable broader AI adoption, but supply constraints limit growth.'
+              },
+              differences: ['User modified reasoning steps', 'Different final conclusions']
+            },
+            {
+              key: 'mock_2',
+              opportunityId: 1,
+              scenarioId: 'B',
+              opportunityTitle: 'Will compute costs drop 50% by 2026?',
+              scenarioTitle: 'Scenario B: Efficiency gains shift marginal demand',
+              userPath: {
+                steps: {},
+                result: 'Efficiency gains primarily benefit high-end GPU users, while mid-tier demand remains stable. Supply chain constraints prevent full cost benefits from reaching market.'
+              },
+              aiPath: {
+                steps: [],
+                result: 'Efficiency gains shift marginal demand down from top-end GPUs, but supply constraints and new workloads maintain overall demand. Cost reduction is gradual, not dramatic.'
+              },
+              differences: ['Different interpretation of evidence']
+            }
+          ];
+        }
 
         return (
           <DifferenceDetailView
@@ -2102,6 +2213,23 @@ export default function App() {
             onUserClick={(clickedUserId) => {
               setDetailSubView(`user_profile_${clickedUserId}`);
             }}
+          />
+        );
+      }
+
+      if (detailSubView === 'settings') {
+        return (
+          <SettingsView
+            onBack={() => setDetailSubView(null)}
+            onNavigate={(view) => setDetailSubView(view)}
+          />
+        );
+      }
+
+      if (detailSubView === 'account_settings') {
+        return (
+          <AccountSettingsView
+            onBack={() => setDetailSubView('settings')}
           />
         );
       }

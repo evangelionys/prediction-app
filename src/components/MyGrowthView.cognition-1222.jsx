@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Edit3, Share2, Bell, ArrowRight, Sparkles, Clock, Lightbulb, Target, Bot, MessageSquare, BrainCircuit, Zap, X, CheckCircle2, Plus, RefreshCw, Lock } from 'lucide-react';
+import { Edit3, Share2, Bell, ArrowRight, Sparkles, Clock, Lightbulb, Target, Bot, MessageSquare, BrainCircuit, Zap, X, CheckCircle2, Plus, RefreshCw, Lock, Settings } from 'lucide-react';
 import { USER_PROFILE, USER_METRICS, USER_STATS, COGNITION_TREND_DATA, COGNITIVE_DIMENSIONS, HISTORICAL_RECORDS, MOCK_CARDS } from '../App';
 import EditProfileModal from './EditProfileModal';
 import AIAnalystCard from './AIAnalystCard';
@@ -625,8 +625,8 @@ const MyGrowthView = ({ onNavigate, comparisonData = null }) => {
   const predictionAnalysis = useMemo(() => {
     // 获取用户所有预测记录（实际应该从API获取，这里使用HISTORICAL_RECORDS作为模拟）
     const allPredictions = HISTORICAL_RECORDS.predictions || [];
-    // 临时设置：为了测试解锁状态，将总数设置为30以上
-    const totalPredictions = Math.max(allPredictions.length, 30);
+    // 临时设置：为了测试 Enabled 状态，设置为 20 或更多
+    const totalPredictions = Math.max(allPredictions.length, 20);
     
     // 获取已结算的预测（status === 'closed'）
     const settledPredictions = allPredictions.filter(p => p.status === 'closed' && p.isPredicted);
@@ -713,7 +713,6 @@ const MyGrowthView = ({ onNavigate, comparisonData = null }) => {
   
   // Use AIAnalystCard instead of InsightCard
   const InsightCard = () => {
-    const isLocked = predictionAnalysis.totalPredictions < 30;
     const daysSinceUpdate = Math.floor((Date.now() - lastUpdateTime) / (24 * 60 * 60 * 1000));
     
     const handleUpdate = () => {
@@ -730,7 +729,6 @@ const MyGrowthView = ({ onNavigate, comparisonData = null }) => {
       <AIAnalystCard
         predictionAnalysis={predictionAnalysis}
         onNavigate={onNavigate}
-        isLocked={isLocked}
         lastUpdateTime={lastUpdateTime}
         onUpdate={handleUpdate}
         isUpdating={isUpdating}
@@ -746,7 +744,13 @@ const MyGrowthView = ({ onNavigate, comparisonData = null }) => {
         <div className="fixed top-0 left-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
         <div className="fixed bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl p-4 flex items-center justify-end border-b border-cyan-100/50 shadow-sm">
+        <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl p-4 flex items-center justify-between border-b border-cyan-100/50 shadow-sm">
+          <button 
+            onClick={() => onNavigate('settings')}
+            className="p-2 rounded-full hover:bg-cyan-50 border border-cyan-200/50 hover:border-cyan-300 text-slate-600 hover:text-cyan-600 transition-all hover-glow"
+          >
+            <Settings size={20} />
+          </button>
           <div className="flex items-center gap-2">
              <button className="p-2 rounded-full hover:bg-cyan-50 border border-cyan-200/50 hover:border-cyan-300 text-slate-600 hover:text-cyan-600 transition-all hover-glow">
                <Share2 size={20} />
