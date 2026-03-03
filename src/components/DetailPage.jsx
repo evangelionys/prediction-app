@@ -5,7 +5,7 @@ import OpportunityCard from './OpportunityCard';
 import { MOCK_COMMENTS } from '../App';
 import CommentCard from './CommentCard';
 
-const DETAIL_TABS = ["Question", "Reasoning", "Opportunities", "Discussions"];
+const DETAIL_TABS = ["Question", "Opportunities", "Discussions"];
 
 const DetailPage = ({ data, onBack, setSubView, drivers, opportunities, onPredict, initialTab = "Question" }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -103,6 +103,7 @@ const DetailPage = ({ data, onBack, setSubView, drivers, opportunities, onPredic
       <div className="flex-1 overflow-y-auto p-4">
         {activeTab === "Question" && (
           <div className="space-y-4">
+            {/* Resolution Rules */}
             <div className="bg-white p-4 rounded-xl border border-gray-200">
               <h3 className="font-bold text-slate-900 mb-2">Resolution Rules</h3>
               <p className="text-sm text-slate-600 leading-relaxed">
@@ -119,32 +120,31 @@ const DetailPage = ({ data, onBack, setSubView, drivers, opportunities, onPredic
                 Ask AI
               </button>
             </div>
-          </div>
-        )}
 
-        {activeTab === "Reasoning" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-slate-900">Drivers</h3>
+            {/* Drivers Section */}
+            <div className="space-y-4 mt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-slate-900">Drivers</h3>
+                <button
+                  onClick={() => setSubView('drivers')}
+                  className="text-sm text-cyan-600 font-medium hover:text-cyan-700"
+                >
+                  View All
+                </button>
+              </div>
+              <div className="space-y-3">
+                {drivers.slice(0, 3).map((driver) => (
+                  <DriverCard key={driver.id} driver={driver} showSide={true} />
+                ))}
+              </div>
               <button
-                onClick={() => setSubView('drivers')}
-                className="text-sm text-cyan-600 font-medium hover:text-cyan-700"
+                onClick={() => setSubView('addDriver')}
+                className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-cyan-500 hover:text-cyan-600 transition-colors flex items-center justify-center gap-2"
               >
-                View All
+                <Plus size={20} />
+                Add Driver
               </button>
             </div>
-            <div className="space-y-3">
-              {drivers.slice(0, 3).map((driver) => (
-                <DriverCard key={driver.id} driver={driver} showSide={true} />
-              ))}
-            </div>
-            <button
-              onClick={() => setSubView('addDriver')}
-              className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-cyan-500 hover:text-cyan-600 transition-colors flex items-center justify-center gap-2"
-            >
-              <Plus size={20} />
-              Add Driver
-            </button>
           </div>
         )}
 
